@@ -17,40 +17,22 @@ const categories = [
     slug: "all",
   },
   {
-    name: "T-shirts",
+    name: "Clothes",
     icon: <Shirt className="w-4 h-4" />,
-    slug: "t-shirts",
+    slug: "clothes",
   },
   {
     name: "Shoes",
     icon: <Footprints className="w-4 h-4" />,
     slug: "shoes",
   },
-  {
-    name: "Accessories",
-    icon: <Glasses className="w-4 h-4" />,
-    slug: "accessories",
-  },
-  {
-    name: "Bags",
-    icon: <Briefcase className="w-4 h-4" />,
-    slug: "bags",
-  },
+
   {
     name: "Dresses",
     icon: <Venus className="w-4 h-4" />,
     slug: "dresses",
   },
-  {
-    name: "Jackets",
-    icon: <Shirt className="w-4 h-4" />,
-    slug: "jackets",
-  },
-  {
-    name: "Gloves",
-    icon: <Hand className="w-4 h-4" />,
-    slug: "gloves",
-  },
+
 ];
 
 const Categories = () => {

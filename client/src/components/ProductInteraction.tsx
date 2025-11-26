@@ -2,32 +2,33 @@
 
 import useCartStore from "@/stores/cartStore";
 import { ProductType } from "@/types";
-import { Minus, Plus, ShoppingCart } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Minus, Plus, ShoppingCart, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 const ProductInteraction = ({
   product,
-  selectedSize,
-  selectedColor,
+  selectedSize: initialSize,
+  selectedColor: initialColor,
+  onColorChange,
 }: {
   product: ProductType;
   selectedSize: string;
   selectedColor: string;
+  onColorChange?: (color: string) => void;
 }) => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [quantity, setQuantity] = useState(1);
-
+  const [size, setSize] = useState(initialSize);
+  const [color, setColor] = useState(initialColor);
   const { addToCart } = useCartStore();
+  const router = useRouter();
 
-  const handleTypeChange = (type: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set(type, value);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  };
+  useEffect(() => {
+    if (onColorChange) {
+      onColorChange(color);
+    }
+  }, [color, onColorChange]);
 
   const handleQuantityChange = (type: "increment" | "decrement") => {
     if (type === "increment") {
@@ -40,89 +41,107 @@ const ProductInteraction = ({
   };
 
   const handleAddToCart = () => {
+    // Determine the correct image for the selected color
+    const variantImage = product.variantImages?.[color] || product.image;
+
     addToCart({
       ...product,
+      image: variantImage, // Use the specific variant image
       quantity,
-      selectedColor,
-      selectedSize,
+      selectedColor: color,
+      selectedSize: size,
     });
-    toast.success("Product added to cart")
+    toast.success("Added to cart!");
   };
+
+  const handleBuyNow = () => {
+    handleAddToCart();
+    router.push("/cart");
+  };
+
   return (
-    <div className="flex flex-col gap-4 mt-4">
-      {/* SIZE */}
-      <div className="flex flex-col gap-2 text-xs">
-        <span className="text-gray-500">Size</span>
-        <div className="flex items-center gap-2">
-          {product.sizes.map((size) => (
-            <div
-              className={`cursor-pointer border-1 p-[2px] ${
-                selectedSize === size ? "border-gray-600" : "border-gray-300"
-              }`}
-              key={size}
-              onClick={() => handleTypeChange("size", size)}
-            >
-              <div
-                className={`w-6 h-6 text-center flex items-center justify-center ${
-                  selectedSize === size
-                    ? "bg-black text-white"
-                    : "bg-white text-black"
-                }`}
-              >
-                {size.toUpperCase()}
-              </div>
+    <div className="space-y-6">
+      {/* SELECTIONS */}
+      <div className="space-y-4">
+        {/* SIZE */}
+        {product.sizes && product.sizes.length > 0 && (
+          <div className="space-y-2">
+            <span className="text-sm font-medium text-gray-900">Select Size</span>
+            <div className="flex flex-wrap gap-2">
+              {product.sizes.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSize(s)}
+                  className={`min-w-[3rem] px-3 py-2 rounded-lg text-sm font-medium border transition-all ${size === s
+                      ? "border-primary bg-primary/5 text-primary ring-1 ring-primary"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                    }`}
+                >
+                  {s.toUpperCase()}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
-      {/* COLOR */}
-      <div className="flex flex-col gap-2 text-sm">
-        <span className="text-gray-500">Color</span>
-        <div className="flex items-center gap-2">
-          {product.colors.map((color) => (
-            <div
-              className={`cursor-pointer border-1 p-[2px] ${
-                selectedColor === color ? "border-gray-300" : "border-white"
-              }`}
-              key={color}
-              onClick={() => handleTypeChange("color", color)}
-            >
-              <div className={`w-6 h-6`} style={{ backgroundColor: color }} />
+          </div>
+        )}
+
+        {/* COLOR */}
+        {product.colors && product.colors.length > 0 && (
+          <div className="space-y-2">
+            <span className="text-sm font-medium text-gray-900">Select Color</span>
+            <div className="flex flex-wrap gap-3">
+              {product.colors.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setColor(c)}
+                  className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${color === c ? "border-primary ring-2 ring-primary ring-offset-2" : "border-transparent hover:scale-110"
+                    }`}
+                  title={c}
+                >
+                  <div className="w-8 h-8 rounded-full border border-black/10 shadow-sm" style={{ backgroundColor: c.toLowerCase() }} />
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
-      {/* QUANTITY */}
-      <div className="flex flex-col gap-2 text-sm">
-        <span className="text-gray-500">Quantity</span>
-        <div className="flex items-center gap-2">
+
+      {/* QUANTITY & ACTIONS */}
+      <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-100">
+        <div className="flex items-center border border-gray-200 rounded-lg w-fit">
           <button
-            className="cursor-pointer border-1 border-gray-300 p-1"
+            className="p-3 hover:bg-gray-50 text-gray-500 transition-colors"
             onClick={() => handleQuantityChange("decrement")}
           >
             <Minus className="w-4 h-4" />
           </button>
-          <span>{quantity}</span>
+          <span className="w-12 text-center font-medium text-gray-900">{quantity}</span>
           <button
-            className="cursor-pointer border-1 border-gray-300 p-1"
+            className="p-3 hover:bg-gray-50 text-gray-500 transition-colors"
             onClick={() => handleQuantityChange("increment")}
           >
             <Plus className="w-4 h-4" />
           </button>
         </div>
+
+        <div className="flex-1 flex gap-3">
+          <button
+            onClick={handleAddToCart}
+            className="flex-1 bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:bg-gray-800 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+          >
+            <ShoppingCart className="w-5 h-5" />
+            Add to Cart
+          </button>
+          <button
+            onClick={handleBuyNow}
+            className="flex-1 bg-primary text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:bg-primary-dark hover:shadow-xl transition-all"
+          >
+            Buy Now
+          </button>
+          <button className="p-3 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all text-gray-500 hover:text-red-500">
+            <Heart className="w-6 h-6" />
+          </button>
+        </div>
       </div>
-      {/* BUTTONS */}
-      <button
-        onClick={handleAddToCart}
-        className="bg-gray-800 text-white px-4 py-2 rounded-md shadow-lg flex items-center justify-center gap-2 cursor-pointer text-sm font-medium"
-      >
-        <Plus className="w-4 h-4" />
-        Add to Cart
-      </button>
-      <button className="ring-1 ring-gray-400 shadow-lg text-gray-800 px-4 py-2 rounded-md flex items-center justify-center cursor-pointer gap-2 text-sm font-medium">
-        <ShoppingCart className="w-4 h-4" />
-        Buy this Item
-      </button>
     </div>
   );
 };

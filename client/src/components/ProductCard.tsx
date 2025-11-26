@@ -2,121 +2,145 @@
 
 import useCartStore from "@/stores/cartStore";
 import { ProductType } from "@/types";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Star, Eye, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
 const ProductCard = ({ product }: { product: ProductType }) => {
-  const [productTypes, setProductTypes] = useState({
-    size: product.sizes[0],
-    color: product.colors[0],
-  });
-
   const { addToCart } = useCartStore();
+  const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || "");
+  const [currentImage, setCurrentImage] = useState(product.image);
 
-  const handleProductType = ({
-    type,
-    value,
-  }: {
-    type: "size" | "color";
-    value: string;
-  }) => {
-    setProductTypes((prev) => ({
-      ...prev,
-      [type]: value,
-    }));
+  // Handle color selection on card
+  const handleColorSelect = (e: React.MouseEvent, color: string) => {
+    e.preventDefault(); // Prevent navigation
+    setSelectedColor(color);
+    if (product.variantImages && product.variantImages[color]) {
+      setCurrentImage(product.variantImages[color]);
+    }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation
     addToCart({
       ...product,
+      image: currentImage, // Use the currently displayed image (variant specific)
       quantity: 1,
-      selectedSize: productTypes.size,
-      selectedColor: productTypes.color,
+      selectedSize: product.sizes?.[0],
+      selectedColor: selectedColor || product.colors?.[0],
     });
-    toast.success("Product added to cart")
+    toast.success("Added to cart!");
   };
 
   return (
-    <div className="shadow-lg rounded-lg overflow-hidden">
-      {/* IMAGE */}
-      <Link href={`/products/${product.id}`}>
-        <div className="relative aspect-[2/3]">
+    <Link href={`/products/${product.id}`} className="group block">
+      <div className="relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 h-full flex flex-col">
+        {/* Badges */}
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
+          {product.isNew && (
+            <span className="bg-blue-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+              New
+            </span>
+          )}
+          {product.isSale && (
+            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+              Sale
+            </span>
+          )}
+        </div>
+
+        {/* Image Container */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
           <Image
-            src={product.images[productTypes.color]}
+            src={currentImage}
             alt={product.name}
             fill
-            className="object-cover hover:scale-105 transition-all duration-300"
+            className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
           />
-        </div>
-      </Link>
-      {/* PRODUCT DETAIL */}
-      <div className="flex flex-col gap-4 p-4">
-        <h1 className="font-medium">{product.name}</h1>
-        <p className="text-sm text-gray-500">{product.shortDescription}</p>
-        {/* PRODUCT TYPES */}
-        <div className="flex items-center gap-4 text-xs">
-          {/* SIZES */}
-          <div className="flex flex-col gap-1">
-            <span className="text-gray-500">Size</span>
-            <select
-              name="size"
-              id="size"
-              className="ring ring-gray-300 rounded-md px-2 py-1"
-              onChange={(e) =>
-                handleProductType({ type: "size", value: e.target.value })
-              }
+
+          {/* Overlay Actions */}
+          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
+            <button
+              onClick={handleAddToCart}
+              className="bg-white text-gray-900 p-3 rounded-full hover:bg-primary hover:text-white transition-colors transform translate-y-4 group-hover:translate-y-0 duration-300 shadow-lg"
+              title="Add to Cart"
             >
-              {product.sizes.map((size) => (
-                <option key={size} value={size}>
-                  {size.toUpperCase()}
-                </option>
-              ))}
-            </select>
+              <ShoppingCart className="w-5 h-5" />
+            </button>
+            <button
+              className="bg-white text-gray-900 p-3 rounded-full hover:bg-primary hover:text-white transition-colors transform translate-y-4 group-hover:translate-y-0 duration-300 delay-75 shadow-lg"
+              title="Quick View"
+            >
+              <Eye className="w-5 h-5" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                toast.success("Added to wishlist!");
+              }}
+              className="bg-white text-gray-900 p-3 rounded-full hover:bg-primary hover:text-white transition-colors transform translate-y-4 group-hover:translate-y-0 duration-300 delay-100 shadow-lg"
+              title="Add to Wishlist"
+            >
+              <Heart className="w-5 h-5" />
+            </button>
           </div>
-          {/* COLORS */}
-          <div className="flex flex-col gap-1">
-            <span className="text-gray-500">Color</span>
-            <div className="flex items-center gap-2">
-              {product.colors.map((color) => (
-                <div
-                  className={`cursor-pointer border-1 ${
-                    productTypes.color === color
-                      ? "border-gray-400"
-                      : "border-gray-200"
-                  } rounded-full p-[1.2px]`}
-                  key={color}
-                  onClick={() =>
-                    handleProductType({ type: "color", value: color })
-                  }
-                >
-                  <div
-                    className="w-[14px] h-[14px] rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
-                </div>
-              ))}
+        </div>
+
+        {/* Content */}
+        <div className="p-4 flex flex-col flex-1">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h3 className="font-semibold text-gray-900 line-clamp-1 group-hover:text-primary transition-colors">
+              {product.name}
+            </h3>
+            <div className="flex items-center gap-1 text-amber-400 text-xs font-medium">
+              <Star className="w-3 h-3 fill-current" />
+              <span>{product.rating || 0}</span>
             </div>
           </div>
-        </div>
-        {/* PRICE AND ADD TO CART BUTTON */}
-        <div className="flex items-center justify-between">
-          <p className="font-medium">${product.price.toFixed(2)}</p>
-          <button
-            onClick={handleAddToCart}
-            className="ring-1 ring-gray-200 shadow-lg rounded-md px-2 py-1 text-sm cursor-pointer hover:text-white hover:bg-black transition-all duration-300 flex items-center gap-2"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            Add to Cart
-          </button>
+
+          <p className="text-sm text-gray-500 line-clamp-2 mb-3 h-10">
+            {product.description || product.shortDescription}
+          </p>
+
+          <div className="mt-auto flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg font-bold text-primary">
+                ${product.price.toFixed(2)}
+              </span>
+              {product.originalPrice && (
+                <span className="text-sm text-gray-400 line-through">
+                  ${product.originalPrice.toFixed(2)}
+                </span>
+              )}
+            </div>
+
+            {/* Color dots if available */}
+            {product.colors && product.colors.length > 0 && (
+              <div className="flex -space-x-1">
+                {product.colors.slice(0, 4).map((color, i) => (
+                  <div
+                    key={i}
+                    onClick={(e) => handleColorSelect(e, color)}
+                    className={`w-5 h-5 rounded-full border-2 cursor-pointer transition-transform hover:scale-110 ${selectedColor === color ? "border-primary z-10" : "border-white"
+                      }`}
+                    style={{ backgroundColor: color.toLowerCase() }}
+                    title={color}
+                  />
+                ))}
+                {product.colors.length > 4 && (
+                  <div className="w-5 h-5 rounded-full bg-gray-100 border border-white flex items-center justify-center text-[8px] text-gray-500">
+                    +
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
 export default ProductCard;
-
-

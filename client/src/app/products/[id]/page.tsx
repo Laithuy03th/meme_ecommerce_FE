@@ -1,35 +1,21 @@
-import ProductInteraction from "@/components/ProductInteraction";
-import { ProductType } from "@/types";
-import Image from "next/image";
-
-// TEMPORARY
-const product: ProductType = {
-  id: 1,
-  name: "Adidas CoreFit T-Shirt",
-  shortDescription:
-    "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-  description:
-    "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-  price: 59.9,
-  sizes: ["xs", "s", "m", "l", "xl"],
-  colors: ["gray", "purple", "green"],
-  images: {
-    gray: "/products/1g.png",
-    purple: "/products/1p.png",
-    green: "/products/1gr.png",
-  },
-};
+import ProductView from "@/components/ProductView";
+import ProductList from "@/components/ProductList";
+import { products, reviews } from "@/data/mockData";
+import { Star } from "lucide-react";
+import { notFound } from "next/navigation";
 
 export const generateMetadata = async ({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) => {
-  // TODO:get the product from db
-  // TEMPORARY
+  const id = (await params).id;
+  const product = products.find((p) => p.id === id);
+  if (!product) return { title: "Product Not Found" };
+
   return {
     title: product.name,
-    describe: product.description,
+    description: product.description,
   };
 };
 
@@ -40,64 +26,74 @@ const ProductPage = async ({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ color: string; size: string }>;
 }) => {
+  const id = (await params).id;
   const { size, color } = await searchParams;
 
-  const selectedSize = size || (product.sizes[0] as string);
-  const selectedColor = color || (product.colors[0] as string);
+  const product = products.find((p) => p.id === id);
+
+  if (!product) {
+    return notFound();
+  }
+
+  const selectedSize = size || (product.sizes?.[0] as string);
+  const selectedColor = color || (product.colors?.[0] as string);
+
+  const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+
   return (
-    <div className="flex flex-col gap-4 lg:flex-row md:gap-12 mt-12">
-      {/* IMAGE */}
-      <div className="w-full lg:w-5/12 relative aspect-[2/3]">
-        <Image
-          src={product.images[selectedColor]}
-          alt={product.name}
-          fill
-          className="object-contain rounded-md"
-        />
-      </div>
-      {/* DETAILS */}
-      <div className="w-full lg:w-7/12 flex flex-col gap-4">
-        <h1 className="text-2xl font-medium">{product.name}</h1>
-        <p className="text-gray-500">{product.description}</p>
-        <h2 className="text-2xl font-semibold">${product.price.toFixed(2)}</h2>
-        <ProductInteraction
-          product={product}
-          selectedSize={selectedSize}
-          selectedColor={selectedColor}
-        />
-        {/* CARD INFO */}
-        <div className="flex items-center gap-2 mt-4">
-          <Image
-            src="/klarna.png"
-            alt="klarna"
-            width={50}
-            height={25}
-            className="rounded-md"
-          />
-          <Image
-            src="/cards.png"
-            alt="cards"
-            width={50}
-            height={25}
-            className="rounded-md"
-          />
-          <Image
-            src="/stripe.png"
-            alt="stripe"
-            width={50}
-            height={25}
-            className="rounded-md"
-          />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+      {/* Main Product View (Client Component) */}
+      <ProductView
+        product={product}
+        initialSize={selectedSize}
+        initialColor={selectedColor}
+        reviewsCount={product.reviews || 0}
+      />
+
+      {/* REVIEWS & DESCRIPTION TABS */}
+      <div className="mb-16">
+        <div className="border-b border-gray-200 mb-8 flex justify-between items-center">
+          <div className="flex gap-8">
+            <button className="pb-4 border-b-2 border-primary font-semibold text-primary">Reviews ({reviews.length})</button>
+            <button className="pb-4 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700">Description</button>
+            <button className="pb-4 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700">Shipping & Returns</button>
+          </div>
+          <button className="bg-gray-900 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
+            Write a Review
+          </button>
         </div>
-        <p className="text-gray-500 text-xs">
-          By clicking Pay Now, you agree to our{" "}
-          <span className="underline hover:text-black">Terms & Conditions</span>{" "}
-          and <span className="underline hover:text-black">Privacy Policy</span>
-          . You authorize us to charge your selected payment method for the
-          total amount shown. All sales are subject to our return and{" "}
-          <span className="underline hover:text-black">Refund Policies</span>.
-        </p>
+
+        <div className="space-y-6">
+          {reviews.map((review) => (
+            <div key={review.id} className="flex gap-4 p-6 bg-gray-50 rounded-xl">
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                {review.user.charAt(0)}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-bold text-gray-900">{review.user}</h4>
+                  <span className="text-xs text-gray-500">{review.date}</span>
+                </div>
+                <div className="flex items-center gap-1 text-amber-400 mb-2">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className={`w-3 h-3 ${s <= review.rating ? "fill-current" : "text-gray-300"}`} />
+                  ))}
+                </div>
+                <p className="text-gray-600 text-sm">{review.comment}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* RELATED PRODUCTS */}
+      {relatedProducts.length > 0 && (
+        <section>
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">Related Products</h2>
+          <ProductList products={relatedProducts} />
+        </section>
+      )}
     </div>
   );
 };

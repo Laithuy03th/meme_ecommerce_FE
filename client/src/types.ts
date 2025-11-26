@@ -3,20 +3,31 @@ import { z } from "zod";
 export type ProductType = {
   id: string | number;
   name: string;
-  shortDescription: string;
-  description: string;
+  slug?: string;
+  shortDescription?: string;
+  description?: string;
   price: number;
-  sizes: string[];
-  colors: string[];
-  images: Record<string, string>;
+  originalPrice?: number;
+  rating?: number;
+  reviews?: number;
+  image: string;
+  images?: string[]; // Gallery images
+  variantImages?: Record<string, string>; // Map color to image URL
+  sizes?: string[];
+  colors?: string[];
+  variants?: { name: string; options: string[] }[];
+  category?: string;
+  isNew?: boolean;
+  isSale?: boolean;
 };
 
 export type ProductsType = ProductType[];
 
 export type CartItemType = ProductType & {
   quantity: number;
-  selectedSize: string;
-  selectedColor: string;
+  selectedSize?: string;
+  selectedColor?: string;
+  selectedVariant?: Record<string, string>;
 };
 
 export type CartItemsType = CartItemType[];
@@ -62,5 +73,3 @@ export type CartStoreActionsType = {
   removeFromCart: (product: CartItemType) => void;
   clearCart: () => void;
 };
-
-

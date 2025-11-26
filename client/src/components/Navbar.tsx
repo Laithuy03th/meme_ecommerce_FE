@@ -3,81 +3,66 @@
 import Image from "next/image";
 import Link from "next/link";
 import SearchBar from "./SearchBar";
-import { Bell, Home, ShoppingCart } from "lucide-react";
+import { Heart, User } from "lucide-react";
 import ShoppingCartIcon from "./ShoppingCartIcon";
-import { useSearchParams } from "next/navigation";
+import ProfileDropdown from "./ProfileDropdown";
+import { usePathname } from "next/navigation";
 
 const Navbar = () => {
-  const searchParams = useSearchParams();
-  const category = searchParams.get("category");
+  const pathname = usePathname();
+
+  const navLinks = [
+    { name: "Home", href: "/" },
+    { name: "Shop", href: "/products" },
+    { name: "Categories", href: "/categories" }, // We might need to create this page
+    { name: "About", href: "/about" },
+  ];
 
   return (
-    <nav className="w-full flex items-center justify-between border-b border-gray-200 py-3 px-4 bg-white">
-      {/* LEFT */}
-      <Link href="/" className="flex items-center">
-        <Image
-          src="/shoplogo.png"
-          alt="TrendLama"
-          width={36}
-          height={36}
-          className="w-8 h-8 md:w-9 md:h-9 rounded-lg"
-        />
-        <p className="ml-3 hidden md:block text-md font-semibold tracking-wider">
-          LAITHUYSHOP.
-        </p>
-      </Link>
+    <nav className="sticky top-0 z-50 w-full glass border-b border-white/20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* LEFT: Logo */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="relative w-8 h-8 md:w-10 md:h-10 overflow-hidden rounded-xl bg-gradient-to-tr from-primary to-secondary p-[1px]">
+              <div className="w-full h-full bg-white rounded-xl flex items-center justify-center">
+                <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">T</span>
+              </div>
+            </div>
+            <span className="hidden md:block text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">
+              TrendLama
+            </span>
+          </Link>
 
-      {/* CENTER MENU */}
-      <div className="hidden md:flex items-center gap-4">
-        <Link
-          href="/"
-          className="px-4 py-2 rounded-full text-sm font-medium 
-                    text-white bg-gradient-to-r from-blue-500 to-indigo-500
-                    shadow-md hover:shadow-lg hover:scale-105
-                    transition-all duration-300 ease-out 
-                    hover:from-indigo-500 hover:to-blue-500 active:scale-95"
-        >
-          Home
-        </Link>
+          {/* CENTER: Navigation */}
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`text-sm font-medium transition-colors hover:text-primary ${pathname === link.href ? "text-primary" : "text-slate-600"
+                  }`}
+              >
+                {link.name}
+              </Link>
+            ))}
+          </div>
 
-        <Link
-          href={category ? `/products/?category=${category}` : "/products"}
-          className="px-4 py-2 rounded-full text-sm font-medium 
-                    text-white bg-gradient-to-r from-pink-500 to-red-500
-                    shadow-md hover:shadow-lg hover:scale-105
-                    transition-all duration-300 ease-out 
-                    hover:from-red-500 hover:to-pink-500 active:scale-95"
-        >
-          All Products
-        </Link>
+          {/* RIGHT: Icons & Actions */}
+          <div className="flex items-center gap-4 md:gap-6">
+            <SearchBar />
 
-        <Link
-          href="/contact"
-          className="px-4 py-2 rounded-full text-sm font-medium 
-                    text-white bg-gradient-to-r from-green-500 to-emerald-500
-                    shadow-md hover:shadow-lg hover:scale-105
-                    transition-all duration-300 ease-out 
-                    hover:from-emerald-500 hover:to-green-500 active:scale-95"
-        >
-          Information
-        </Link>
-      </div>
+            <div className="flex items-center gap-3 md:gap-4">
+              <Link href="/wishlist" className="relative group">
+                <Heart className="w-5 h-5 text-slate-600 group-hover:text-secondary transition-colors" />
+              </Link>
 
-      {/* RIGHT */}
-      <div className="flex items-center gap-6">
-        <SearchBar />
-        <Link href="/">
-          <Home className="w-4 h-4 text-gray-600 hover:text-blue-600 transition-colors" />
-        </Link>
-        <Bell className="w-4 h-4 text-gray-600 hover:text-blue-600 transition-colors" />
-        <ShoppingCartIcon />
-        <Link
-          href="/login"
-          className="px-3 py-1.5 border border-gray-300 rounded-full text-sm text-gray-700
-                     hover:bg-gray-100 transition-all duration-200"
-        >
-          Sign in
-        </Link>
+              <ShoppingCartIcon />
+
+              <ProfileDropdown />
+            </div>
+          </div>
+        </div>
       </div>
     </nav>
   );

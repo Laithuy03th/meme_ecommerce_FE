@@ -149,6 +149,7 @@ export type CartStoreStateType = {
   totalItems: number;
   hasHydrated: boolean;
   isLoading: boolean;
+  selectedItemIds: number[];
 };
 
 export type CartStoreActionsType = {
@@ -158,6 +159,10 @@ export type CartStoreActionsType = {
   removeFromCart: (itemId: number) => Promise<void>;
   clearCart: () => void;
   syncCart: () => Promise<void>; // For merging local cart after login if needed
+  toggleSelection: (itemId: number) => void;
+  selectAll: () => void;
+  clearSelection: () => void;
+  setSelectedItems: (itemIds: number[]) => void;
 };
 
 // Auth Types
@@ -177,3 +182,93 @@ export type LoginResponse = {
 };
 
 export type RegisterResponse = UserType;
+
+// --- ADDRESS TYPES ---
+export type AddressType = {
+  id: number;
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  ward: string;
+  district: string;
+  province: string;
+  country: string;
+  label?: string;
+  zipCode?: string;
+  isDefault?: boolean; // UI uses isDefault
+  default?: boolean;   // API returns default
+  createdAt?: string;
+};
+
+// --- VOUCHER TYPES ---
+export type VoucherType = {
+  id: number;
+  code: string;
+  discountType: string;
+  discountValue: number;
+  minOrderAmount: number;
+  maxDiscountAmount: number;
+  startDate: string;
+  endDate: string;
+  usageLimit: number;
+  usedCount: number;
+  isActive: boolean;
+};
+
+export type VoucherValidationResponse = {
+  valid: boolean;
+  message?: string;
+  discountAmount: number;
+  voucher?: VoucherType;
+};
+
+// --- ORDER TYPES ---
+export type OrderItemType = {
+  id: number;
+  productId: number;
+  variantId?: number;
+  productName: string;
+  productSlug: string;
+  thumbnailUrl: string;
+  color?: string;
+  size?: string;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+};
+
+export type OrderTimelineType = {
+  status: string;
+  timestamp: string;
+  completed: boolean;
+};
+
+export type OrderType = {
+  id: number;
+  orderNumber?: string; // Some APIs return this
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string | { type: string; last4?: string }; // Handle both string and object
+  totalAmount: number;
+  shippingFee: number;
+  note?: string;
+  createdAt: string;
+  items: OrderItemType[];
+  timeline?: OrderTimelineType[];
+  shippingAddress?: {
+    fullName: string;
+    addressLine: string;
+    phone: string;
+  };
+};
+
+// --- WISHLIST TYPES ---
+export type WishlistItemType = {
+  id: number;
+  productId: number;
+  productName: string;
+  productSlug: string;
+  thumbnailUrl: string;
+  basePrice: number;
+  createdAt: string;
+};

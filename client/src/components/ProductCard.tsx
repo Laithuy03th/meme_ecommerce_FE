@@ -1,19 +1,23 @@
 "use client";
 
 import useCartStore from "@/stores/cartStore";
+import useWishlistStore from "@/stores/wishlistStore";
 import { ProductType } from "@/types";
-import { ShoppingCart, Star, Eye, Heart } from "lucide-react";
+import { Eye, Heart, ShoppingCart, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { toast } from "react-toastify";
 
 const ProductCard = ({ product }: { product: ProductType }) => {
   const { addToCart } = useCartStore();
+  const { isInWishlist, addItem, removeItem } = useWishlistStore();
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || "");
+
   // Use thumbnailUrl from API, fallback to image if available, or placeholder
   const mainImage = product.thumbnailUrl || product.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=1000";
   const [currentImage, setCurrentImage] = useState(mainImage);
+
+  const isLiked = isInWishlist(product.id);
 
   // Handle color selection on card
   const handleColorSelect = (e: React.MouseEvent, color: string) => {
@@ -37,6 +41,15 @@ const ProductCard = ({ product }: { product: ProductType }) => {
     const variantId = selectedVariant?.id;
 
     addToCart(product, 1, variantId, color, size);
+  };
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isLiked) {
+      removeItem(product.id);
+    } else {
+      addItem(product.id);
+    }
   };
 
   return (
@@ -81,14 +94,14 @@ const ProductCard = ({ product }: { product: ProductType }) => {
               <Eye className="w-5 h-5" />
             </button>
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                toast.success("Added to wishlist!");
-              }}
-              className="bg-white text-gray-900 p-3 rounded-full hover:bg-primary hover:text-white transition-colors transform translate-y-4 group-hover:translate-y-0 duration-300 delay-100 shadow-lg"
-              title="Add to Wishlist"
+              onClick={handleToggleWishlist}
+              className={`p-3 rounded-full transition-colors transform translate-y-4 group-hover:translate-y-0 duration-300 delay-100 shadow-lg ${isLiked
+                  ? "bg-red-500 text-white hover:bg-red-600"
+                  : "bg-white text-gray-900 hover:bg-primary hover:text-white"
+                }`}
+              title={isLiked ? "Remove from Wishlist" : "Add to Wishlist"}
             >
-              <Heart className="w-5 h-5" />
+              <Heart className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`} />
             </button>
           </div>
         </div>

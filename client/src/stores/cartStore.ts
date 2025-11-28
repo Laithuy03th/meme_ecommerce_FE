@@ -15,6 +15,8 @@ const useCartStore = create<CartStoreStateType & CartStoreActionsType>()(
       hasHydrated: false,
       isLoading: false,
 
+      selectedItemIds: [],
+
       fetchCart: async () => {
         const isAuthenticated = useAuthStore.getState().isAuthenticated;
         if (!isAuthenticated) return;
@@ -99,12 +101,13 @@ const useCartStore = create<CartStoreStateType & CartStoreActionsType>()(
         set({ isLoading: true });
         try {
           const cartData = await removeCartItem(itemId);
-          set({
+          set((state) => ({
             cart: cartData.items,
             cartId: cartData.id,
             totalAmount: cartData.totalAmount,
             totalItems: cartData.totalItems,
-          });
+            selectedItemIds: state.selectedItemIds.filter(id => id !== itemId)
+          }));
           toast.success("Item removed from cart");
         } catch (error: any) {
           console.error("Failed to remove cart item:", error);
@@ -114,11 +117,36 @@ const useCartStore = create<CartStoreStateType & CartStoreActionsType>()(
         }
       },
 
-      clearCart: () => set({ cart: [], totalAmount: 0, totalItems: 0, cartId: null }),
+      clearCart: () => set({ cart: [], totalAmount: 0, totalItems: 0, cartId: null, selectedItemIds: [] }),
 
       syncCart: async () => {
         await get().fetchCart();
-      }
+      },
+
+      toggleSelection: (itemId: number) => {
+        set((state) => {
+          const isSelected = state.selectedItemIds.includes(itemId);
+          return {
+            selectedItemIds: isSelected
+              ? state.selectedItemIds.filter((id) => id !== itemId)
+              : [...state.selectedItemIds, itemId],
+          };
+        });
+      },
+
+      selectAll: () => {
+        set((state) => ({
+          selectedItemIds: state.cart.map((item) => item.id),
+        }));
+      },
+
+      clearSelection: () => {
+        set({ selectedItemIds: [] });
+      },
+
+      setSelectedItems: (itemIds: number[]) => {
+        set({ selectedItemIds: itemIds });
+      },
     }),
     {
       name: "cart-storage",

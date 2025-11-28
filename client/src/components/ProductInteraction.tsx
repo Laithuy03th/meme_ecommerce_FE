@@ -1,11 +1,12 @@
 "use client";
 
 import useCartStore from "@/stores/cartStore";
+import useWishlistStore from "@/stores/wishlistStore";
 import { ProductType } from "@/types";
-import { Minus, Plus, ShoppingCart, Heart } from "lucide-react";
-import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { Heart, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const ProductInteraction = ({
   product,
@@ -21,8 +22,26 @@ const ProductInteraction = ({
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState(initialSize);
   const [color, setColor] = useState(initialColor);
-  const { addToCart } = useCartStore();
+  const { addToCart, updateCartItem, setSelectedItems, cart } = useCartStore();
+  const { isInWishlist, addItem, removeItem } = useWishlistStore();
   const router = useRouter();
+
+  const isLiked = isInWishlist(product.id);
+
+  // Sync quantity from cart if item exists
+  useEffect(() => {
+    const existingItem = cart.find(item =>
+      item.productId === product.id &&
+      (item.color === color || (!item.color && !color)) &&
+      (item.size === size || (!item.size && !size))
+    );
+
+    if (existingItem) {
+      setQuantity(existingItem.quantity);
+    } else {
+      setQuantity(1);
+    }
+  }, [cart, product.id, color, size]);
 
   useEffect(() => {
     if (onColorChange) {
@@ -40,49 +59,81 @@ const ProductInteraction = ({
     }
   };
 
-  const handleAddToCart = () => {
-    // Validate selection if product has options
+  const validateSelection = () => {
     if (product.sizes?.length && !size) {
       toast.error("Please select a size");
-      return;
+      return false;
     }
     if (product.colors?.length && !color) {
       toast.error("Please select a color");
-      return;
+      return false;
     }
+    return true;
+  };
 
-    // Find the matching variant (case-insensitive)
-    let variantId: number | undefined;
-
+  const getVariantId = () => {
     if (product.variants?.length) {
       const selectedVariant = product.variants.find(
         (v) =>
           (v.color?.toLowerCase() || "") === (color?.toLowerCase() || "") &&
           (v.size?.toLowerCase() || "") === (size?.toLowerCase() || "")
       );
-      variantId = selectedVariant?.id;
+      return selectedVariant?.id;
+    }
+    return undefined;
+  };
 
-      console.log("Adding to cart from Detail:", {
-        productName: product.name,
-        color,
-        size,
-        variantId,
-        variants: product.variants
-      });
+  const handleAddToCart = async () => {
+    if (!validateSelection()) return false;
+    const variantId = getVariantId();
+    await addToCart(product, quantity, variantId, color, size);
+    return true;
+  };
 
-      if (!variantId) {
-        console.warn("No matching variant found for selected options");
-        // If we can't find a variant but should have one, maybe we shouldn't proceed?
-        // But for now, let's try sending what we have.
+  const handleBuyNow = async () => {
+    if (!validateSelection()) return;
+
+    const variantId = getVariantId();
+
+    // Check if item exists in cart
+    const existingItem = cart.find(item =>
+      item.productId === product.id &&
+      (item.color === color || (!item.color && !color)) &&
+      (item.size === size || (!item.size && !size))
+    );
+
+    if (existingItem) {
+      // Update quantity if different
+      if (existingItem.quantity !== quantity) {
+        await updateCartItem(existingItem.id, quantity);
+      }
+      setSelectedItems([existingItem.id]);
+    } else {
+      // Add to cart
+      await addToCart(product, quantity, variantId, color, size);
+      // Find the newly added item to select it
+      // We need to fetch cart again or wait for store to update?
+      // addToCart is async and updates store.
+      const { cart: newCart } = useCartStore.getState();
+      const newItem = newCart.find(item =>
+        item.productId === product.id &&
+        (item.color === color || (!item.color && !color)) &&
+        (item.size === size || (!item.size && !size))
+      );
+      if (newItem) {
+        setSelectedItems([newItem.id]);
       }
     }
 
-    addToCart(product, quantity, variantId, color, size);
+    router.push("/cart?step=2"); // Go to checkout (Address selection)
   };
 
-  const handleBuyNow = () => {
-    handleAddToCart();
-    router.push("/cart");
+  const handleToggleWishlist = () => {
+    if (isLiked) {
+      removeItem(product.id);
+    } else {
+      addItem(product.id);
+    }
   };
 
   return (
@@ -163,8 +214,14 @@ const ProductInteraction = ({
           >
             Buy Now
           </button>
-          <button className="p-3 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all text-gray-500 hover:text-red-500">
-            <Heart className="w-6 h-6" />
+          <button
+            onClick={handleToggleWishlist}
+            className={`p-3 border rounded-xl hover:bg-gray-50 transition-all ${isLiked
+              ? "border-red-200 bg-red-50 text-red-500 hover:bg-red-100 hover:border-red-300"
+              : "border-gray-200 text-gray-500 hover:text-red-500 hover:border-gray-300"
+              }`}
+          >
+            <Heart className={`w-6 h-6 ${isLiked ? "fill-current" : ""}`} />
           </button>
         </div>
       </div>

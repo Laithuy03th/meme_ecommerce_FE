@@ -7,9 +7,17 @@ import { Heart, User } from "lucide-react";
 import ShoppingCartIcon from "./ShoppingCartIcon";
 import ProfileDropdown from "./ProfileDropdown";
 import { usePathname } from "next/navigation";
+import useWishlistStore from "@/stores/wishlistStore";
+import { useEffect, useState } from "react";
 
 const Navbar = () => {
   const pathname = usePathname();
+  const { wishlist } = useWishlistStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -55,6 +63,11 @@ const Navbar = () => {
             <div className="flex items-center gap-3 md:gap-4">
               <Link href="/wishlist" className="relative group">
                 <Heart className="w-5 h-5 text-slate-600 group-hover:text-secondary transition-colors" />
+                {mounted && wishlist.length > 0 && (
+                  <span className="absolute -top-2 -right-2 w-4 h-4 bg-secondary text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {wishlist.length}
+                  </span>
+                )}
               </Link>
 
               <ShoppingCartIcon />

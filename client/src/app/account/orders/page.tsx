@@ -1,12 +1,58 @@
-import { Package, ChevronRight } from "lucide-react";
+"use client";
+
+import { getOrders } from "@/services/api";
+import { OrderType } from "@/types";
+import { ChevronRight, Package, ShoppingBag } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const OrdersPage = () => {
-    // Mock orders
-    const orders = [
-        { id: 'ORD-001', date: '2023-10-25', status: 'Delivered', total: 129.99, items: 3 },
-        { id: 'ORD-002', date: '2023-10-10', status: 'Processing', total: 59.50, items: 1 },
-    ];
+    const [orders, setOrders] = useState<OrderType[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                const data = await getOrders();
+                setOrders(data.content);
+            } catch (error) {
+                console.error("Failed to fetch orders", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchOrders();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div className="space-y-4">
+                <h2 className="text-xl font-bold text-gray-900">Order History</h2>
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-32 bg-gray-100 rounded-xl animate-pulse" />
+                ))}
+            </div>
+        );
+    }
+
+    if (orders.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                    <ShoppingBag className="w-8 h-8 text-gray-400" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">No orders yet</h2>
+                <p className="text-gray-500">Start shopping to see your orders here.</p>
+                <Link
+                    href="/products"
+                    className="mt-2 bg-primary text-white px-6 py-2 rounded-full font-medium hover:bg-primary-dark transition-colors"
+                >
+                    Browse Products
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -26,19 +72,23 @@ const OrdersPage = () => {
                                 </div>
                                 <div>
                                     <span className="font-bold text-gray-900 block">Order #{order.id}</span>
-                                    <span className="text-xs text-gray-500">{order.date}</span>
+                                    <span className="text-xs text-gray-500">
+                                        {new Date(order.createdAt).toLocaleDateString()}
+                                    </span>
                                 </div>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === 'Delivered' ? 'bg-green-100 text-green-600' :
-                                    order.status === 'Processing' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-600' :
+                                    order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-600' :
+                                        order.status === 'CANCELLED' ? 'bg-red-100 text-red-600' :
+                                            'bg-blue-100 text-blue-600'
                                 }`}>
                                 {order.status}
                             </span>
                         </div>
                         <div className="flex justify-between items-center text-sm border-t border-gray-100 pt-4">
-                            <span className="text-gray-500">{order.items} items</span>
+                            <span className="text-gray-500">{order.items.length} items</span>
                             <div className="flex items-center gap-2">
-                                <span className="font-bold text-gray-900">${order.total.toFixed(2)}</span>
+                                <span className="font-bold text-gray-900">${order.totalAmount.toFixed(2)}</span>
                                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                             </div>
                         </div>

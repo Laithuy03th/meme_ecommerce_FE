@@ -11,7 +11,9 @@ import { toast } from "react-toastify";
 const ProductCard = ({ product }: { product: ProductType }) => {
   const { addToCart } = useCartStore();
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || "");
-  const [currentImage, setCurrentImage] = useState(product.image);
+  // Use thumbnailUrl from API, fallback to image if available, or placeholder
+  const mainImage = product.thumbnailUrl || product.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=1000";
+  const [currentImage, setCurrentImage] = useState(mainImage);
 
   // Handle color selection on card
   const handleColorSelect = (e: React.MouseEvent, color: string) => {
@@ -24,14 +26,17 @@ const ProductCard = ({ product }: { product: ProductType }) => {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation
-    addToCart({
-      ...product,
-      image: currentImage, // Use the currently displayed image (variant specific)
-      quantity: 1,
-      selectedSize: product.sizes?.[0],
-      selectedColor: selectedColor || product.colors?.[0],
-    });
-    toast.success("Added to cart!");
+
+    const size = product.sizes?.[0];
+    const color = selectedColor || product.colors?.[0];
+
+    // Find matching variant
+    const selectedVariant = product.variants?.find(
+      (v) => v.color === color && v.size === size
+    );
+    const variantId = selectedVariant?.id;
+
+    addToCart(product, 1, variantId, color, size);
   };
 
   return (
@@ -101,7 +106,7 @@ const ProductCard = ({ product }: { product: ProductType }) => {
           </div>
 
           <p className="text-sm text-gray-500 line-clamp-2 mb-3 h-10">
-            {product.description || product.shortDescription}
+            {product.description || product.shortDescription || "No description available"}
           </p>
 
           <div className="mt-auto flex items-center justify-between">

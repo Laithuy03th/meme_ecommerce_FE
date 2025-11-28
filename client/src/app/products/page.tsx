@@ -2,7 +2,7 @@ import ProductList from "@/components/ProductList";
 import FilterSidebar from "@/components/FilterSidebar";
 import Filter from "@/components/Filter";
 import Pagination from "@/components/Pagination";
-import { products } from "@/data/mockData";
+import { getCategories, getProducts } from "@/services/api";
 
 const ProductsPage = async ({
   searchParams,
@@ -11,59 +11,28 @@ const ProductsPage = async ({
 }) => {
   const params = await searchParams;
 
-  const category = params.category as string;
+  const categorySlug = params.category as string;
   const search = params.search as string;
-  const sort = params.sort as string;
-  const minPrice = params.minPrice ? Number(params.minPrice) : 0;
-  const maxPrice = params.maxPrice ? Number(params.maxPrice) : 10000;
-  const color = params.color as string;
-  const size = params.size as string;
+  const sort = (params.sort as string) || "newest";
+  const minPrice = params.minPrice ? Number(params.minPrice) : undefined;
+  const maxPrice = params.maxPrice ? Number(params.maxPrice) : undefined;
   const page = Number(params.page) || 1;
+  const size = 20;
 
-  // Filter Logic
-  let filteredProducts = products;
+  // Fetch data concurrently
+  const [categories, productsData] = await Promise.all([
+    getCategories(),
+    getProducts(page - 1, size, sort, {
+      search,
+      minPrice,
+      maxPrice,
+      categorySlug,
+    }),
+  ]);
 
-  if (category) {
-    filteredProducts = filteredProducts.filter(p => p.category?.toLowerCase() === category.toLowerCase() || p.slug === category);
-  }
-
-  if (search) {
-    filteredProducts = filteredProducts.filter(p =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.description?.toLowerCase().includes(search.toLowerCase())
-    );
-  }
-
-  if (minPrice || maxPrice < 10000) {
-    filteredProducts = filteredProducts.filter(p => p.price >= minPrice && p.price <= maxPrice);
-  }
-
-  if (color) {
-    filteredProducts = filteredProducts.filter(p => p.colors?.includes(color));
-  }
-
-  if (size) {
-    filteredProducts = filteredProducts.filter(p => p.sizes?.includes(size));
-  }
-
-  // Sort Logic
-  if (sort) {
-    if (sort === 'asc') {
-      filteredProducts.sort((a, b) => a.price - b.price);
-    } else if (sort === 'desc') {
-      filteredProducts.sort((a, b) => b.price - a.price);
-    } else if (sort === 'newest') {
-      filteredProducts.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
-    }
-  }
-
-  // Pagination Logic
-  const pageSize = category ? 10 : 20;
-  const totalItems = filteredProducts.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+  const products = productsData.content;
+  const totalPages = productsData.totalPages;
+  const totalItems = productsData.totalElements;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -71,15 +40,53 @@ const ProductsPage = async ({
         {/* Sidebar */}
         <aside className="w-full md:w-64 flex-shrink-0">
           <div className="sticky top-24">
-            <FilterSidebar />
+            <FilterSidebar categories={categories} />
           </div>
         </aside>
 
         {/* Main Content */}
         <div className="flex-1">
+          {/* Flash Sale Banner */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-6 md:p-10 mb-8 text-white shadow-lg">
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div>
+                <span className="inline-block py-1 px-3 rounded-full bg-white/20 backdrop-blur-sm text-xs font-bold tracking-wider mb-3 border border-white/30">
+                  LIMITED TIME OFFER
+                </span>
+                <h2 className="text-2xl md:text-4xl font-bold mb-2">Flash Sale Madness! ⚡</h2>
+                <p className="text-indigo-100 max-w-md text-sm md:text-base">
+                  Grab your favorites with up to <span className="font-bold text-yellow-300">70% OFF</span>. Prices drop for a limited time only!
+                </p>
+              </div>
+
+              {/* Countdown Timer Mockup */}
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
+                <div className="text-center">
+                  <div className="bg-white text-indigo-600 font-bold rounded-lg w-10 h-10 flex items-center justify-center text-lg shadow-sm">02</div>
+                  <span className="text-[10px] uppercase tracking-wider mt-1 block opacity-80">Hrs</span>
+                </div>
+                <span className="text-xl font-bold -mt-4">:</span>
+                <div className="text-center">
+                  <div className="bg-white text-indigo-600 font-bold rounded-lg w-10 h-10 flex items-center justify-center text-lg shadow-sm">45</div>
+                  <span className="text-[10px] uppercase tracking-wider mt-1 block opacity-80">Mins</span>
+                </div>
+                <span className="text-xl font-bold -mt-4">:</span>
+                <div className="text-center">
+                  <div className="bg-white text-indigo-600 font-bold rounded-lg w-10 h-10 flex items-center justify-center text-lg shadow-sm">12</div>
+                  <span className="text-[10px] uppercase tracking-wider mt-1 block opacity-80">Secs</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Decorative Elements */}
+            <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-white/10 blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-40 h-40 rounded-full bg-purple-400/20 blur-2xl"></div>
+          </div>
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
-              {category ? `${category} Products` : "All Products"}
+              {categorySlug
+                ? `${categories.find((c) => c.slug === categorySlug)?.name || categorySlug} Products`
+                : "All Products"}
               <span className="ml-2 text-sm font-normal text-gray-500">
                 ({totalItems} items)
               </span>
@@ -87,9 +94,9 @@ const ProductsPage = async ({
             <Filter />
           </div>
 
-          {paginatedProducts.length > 0 ? (
+          {products.length > 0 ? (
             <>
-              <ProductList products={paginatedProducts} />
+              <ProductList products={products} />
               <Pagination
                 currentPage={page}
                 totalPages={totalPages}

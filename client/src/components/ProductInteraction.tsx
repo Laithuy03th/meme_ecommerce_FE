@@ -41,17 +41,43 @@ const ProductInteraction = ({
   };
 
   const handleAddToCart = () => {
-    // Determine the correct image for the selected color
-    const variantImage = product.variantImages?.[color] || product.image;
+    // Validate selection if product has options
+    if (product.sizes?.length && !size) {
+      toast.error("Please select a size");
+      return;
+    }
+    if (product.colors?.length && !color) {
+      toast.error("Please select a color");
+      return;
+    }
 
-    addToCart({
-      ...product,
-      image: variantImage, // Use the specific variant image
-      quantity,
-      selectedColor: color,
-      selectedSize: size,
-    });
-    toast.success("Added to cart!");
+    // Find the matching variant (case-insensitive)
+    let variantId: number | undefined;
+
+    if (product.variants?.length) {
+      const selectedVariant = product.variants.find(
+        (v) =>
+          (v.color?.toLowerCase() || "") === (color?.toLowerCase() || "") &&
+          (v.size?.toLowerCase() || "") === (size?.toLowerCase() || "")
+      );
+      variantId = selectedVariant?.id;
+
+      console.log("Adding to cart from Detail:", {
+        productName: product.name,
+        color,
+        size,
+        variantId,
+        variants: product.variants
+      });
+
+      if (!variantId) {
+        console.warn("No matching variant found for selected options");
+        // If we can't find a variant but should have one, maybe we shouldn't proceed?
+        // But for now, let's try sending what we have.
+      }
+    }
+
+    addToCart(product, quantity, variantId, color, size);
   };
 
   const handleBuyNow = () => {
@@ -73,8 +99,8 @@ const ProductInteraction = ({
                   key={s}
                   onClick={() => setSize(s)}
                   className={`min-w-[3rem] px-3 py-2 rounded-lg text-sm font-medium border transition-all ${size === s
-                      ? "border-primary bg-primary/5 text-primary ring-1 ring-primary"
-                      : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                    ? "border-primary bg-primary/5 text-primary ring-1 ring-primary"
+                    : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
                     }`}
                 >
                   {s.toUpperCase()}

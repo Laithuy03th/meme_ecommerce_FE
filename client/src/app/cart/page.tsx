@@ -27,11 +27,11 @@ const CartPage = () => {
   }, []);
 
   const activeStep = parseInt(searchParams.get("step") || "1");
-  const { cart, removeFromCart } = useCartStore();
+  const { cart, removeFromCart, totalAmount } = useCartStore();
 
   if (!mounted) return null;
 
-  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = totalAmount || cart.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
   const shippingFee = 10;
   const discount = 0; // Implement logic if needed
   const total = subtotal + shippingFee - discount;
@@ -86,32 +86,50 @@ const CartPage = () => {
             {activeStep === 1 ? (
               <div className="space-y-6">
                 {cart.map((item) => (
-                  <div key={`${item.id}-${item.selectedSize}-${item.selectedColor}`} className="flex gap-6 py-6 border-b border-gray-100 last:border-0 last:pb-0">
+                  <div key={item.id} className="flex gap-6 py-6 border-b border-gray-100 last:border-0 last:pb-0">
                     <div className="relative w-24 h-24 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                      />
+                      <Link href={`/products/${item.productId}`}>
+                        <Image
+                          src={item.thumbnailUrl || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=1000"}
+                          alt={item.productName}
+                          fill
+                          className="object-cover hover:scale-110 transition-transform duration-300"
+                        />
+                      </Link>
                     </div>
                     <div className="flex-1 flex flex-col justify-between">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                          <Link href={`/products/${item.productId}`} className="hover:text-primary transition-colors">
+                            <h3 className="font-semibold text-gray-900">{item.productName}</h3>
+                          </Link>
                           <div className="text-sm text-gray-500 mt-1 space-y-1">
-                            {item.selectedSize && <p>Size: {item.selectedSize}</p>}
-                            {item.selectedColor && <p>Color: {item.selectedColor}</p>}
+                            {item.size && <p>Size: {item.size}</p>}
+                            {item.color && <p>Color: {item.color}</p>}
                           </div>
                         </div>
-                        <p className="font-bold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="font-bold text-gray-900">${item.totalPrice.toFixed(2)}</p>
                       </div>
                       <div className="flex justify-between items-center mt-4">
                         <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>Qty: {item.quantity}</span>
+                          <div className="flex items-center border border-gray-200 rounded-lg">
+                            <button
+                              onClick={() => useCartStore.getState().updateCartItem(item.id, Math.max(1, item.quantity - 1))}
+                              className="px-3 py-1 hover:bg-gray-50 transition-colors"
+                            >
+                              -
+                            </button>
+                            <span className="px-2 font-medium">{item.quantity}</span>
+                            <button
+                              onClick={() => useCartStore.getState().updateCartItem(item.id, item.quantity + 1)}
+                              className="px-3 py-1 hover:bg-gray-50 transition-colors"
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
                         <button
-                          onClick={() => removeFromCart(item)}
+                          onClick={() => removeFromCart(item.id)}
                           className="text-red-500 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />

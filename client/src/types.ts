@@ -1,33 +1,112 @@
 import { z } from "zod";
 
-export type ProductType = {
-  id: string | number;
+export type CategoryType = {
+  id: number;
   name: string;
-  slug?: string;
-  shortDescription?: string;
+  slug: string;
   description?: string;
+  parentId?: number;
+  parentName?: string;
+  sortOrder?: number;
+  status?: "ACTIVE" | "INACTIVE";
+  imageUrl?: string;
+};
+
+export type ProductImageType = {
+  id: number;
+  imageUrl: string;
+  thumbnail: boolean;
+  sortOrder: number;
+};
+
+export type ProductVariantType = {
+  id: number;
+  sku: string;
+  color: string;
+  size: string;
   price: number;
-  originalPrice?: number;
+  stock: number;
+  status: string;
+};
+
+export type ProductType = {
+  id: number;
+  name: string;
+  slug: string;
+  thumbnailUrl: string;
+  price: number;
+  basePrice?: number;
+  categorySlug?: string;
+  categoryName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  status?: string;
+
+  description?: string;
+  shortDesc?: string;
+  longDesc?: string;
+  shortDescription?: string;
+
   rating?: number;
   reviews?: number;
-  image: string;
-  images?: string[]; // Gallery images
-  variantImages?: Record<string, string>; // Map color to image URL
-  sizes?: string[];
-  colors?: string[];
-  variants?: { name: string; options: string[] }[];
-  category?: string;
+
+  images?: string[];
+  productImages?: ProductImageType[];
+  image?: string;
+
   isNew?: boolean;
   isSale?: boolean;
+  originalPrice?: number;
+
+  colors?: string[];
+  sizes?: string[];
+  variantImages?: Record<string, string>;
+  variants?: ProductVariantType[];
+};
+
+export type SearchKeywordSuggestion = {
+  keyword: string;
+  category: string;
+  categorySlug: string;
+};
+
+export type PaginatedResponse<T> = {
+  content: T[];
+  number: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first?: boolean;
+  last?: boolean;
+  empty?: boolean;
 };
 
 export type ProductsType = ProductType[];
 
-export type CartItemType = ProductType & {
+// Updated Cart Types to match API
+export type CartItemType = {
+  id: number; // Cart Item ID
+  productId: number;
+  variantId?: number;
+  productName: string;
+  productSlug: string;
+  thumbnailUrl: string;
+  color?: string;
+  size?: string;
+  unitPrice: number;
   quantity: number;
+  totalPrice: number;
+
+  // UI helper props (optional)
   selectedSize?: string;
   selectedColor?: string;
-  selectedVariant?: Record<string, string>;
+};
+
+export type CartType = {
+  id: number;
+  totalAmount: number;
+  totalItems: number;
+  items: CartItemType[];
 };
 
 export type CartItemsType = CartItemType[];
@@ -65,11 +144,36 @@ export type PaymentFormInputs = z.infer<typeof paymentFormSchema>;
 
 export type CartStoreStateType = {
   cart: CartItemsType;
+  cartId: number | null;
+  totalAmount: number;
+  totalItems: number;
   hasHydrated: boolean;
+  isLoading: boolean;
 };
 
 export type CartStoreActionsType = {
-  addToCart: (product: CartItemType) => void;
-  removeFromCart: (product: CartItemType) => void;
+  fetchCart: () => Promise<void>;
+  addToCart: (product: ProductType, quantity: number, variantId?: number, color?: string, size?: string) => Promise<void>;
+  updateCartItem: (itemId: number, quantity: number) => Promise<void>;
+  removeFromCart: (itemId: number) => Promise<void>;
   clearCart: () => void;
+  syncCart: () => Promise<void>; // For merging local cart after login if needed
 };
+
+// Auth Types
+export type UserType = {
+  id: number;
+  email: string;
+  fullName: string;
+  phone: string;
+  roles: string[];
+};
+
+export type LoginResponse = {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string | null;
+  user: UserType;
+};
+
+export type RegisterResponse = UserType;

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { CategoryType } from "@/types";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const FilterSidebar = () => {
+interface FilterSidebarProps {
+    categories: CategoryType[];
+}
+
+const FilterSidebar = ({ categories }: FilterSidebarProps) => {
     const searchParams = useSearchParams();
     const router = useRouter();
-
-    const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
 
     const handleFilterChange = (key: string, value: string) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -16,8 +18,12 @@ const FilterSidebar = () => {
         } else {
             params.delete(key);
         }
+        // Reset page when filtering
+        params.set("page", "1");
         router.push(`/products?${params.toString()}`);
     };
+
+    const currentCategory = searchParams.get("category");
 
     return (
         <div className="w-full space-y-8">
@@ -25,16 +31,30 @@ const FilterSidebar = () => {
             <div>
                 <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
                 <div className="space-y-2">
-                    {['Electronics', 'Fashion', 'Home & Living', 'Beauty'].map((cat) => (
-                        <label key={cat} className="flex items-center gap-2 cursor-pointer group">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                            type="radio"
+                            name="category"
+                            checked={!currentCategory}
+                            onChange={() => handleFilterChange("category", "")}
+                            className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                        />
+                        <span className={`text-sm ${!currentCategory ? 'text-primary font-medium' : 'text-gray-600 group-hover:text-primary'}`}>
+                            All Categories
+                        </span>
+                    </label>
+                    {categories.map((cat) => (
+                        <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
                             <input
-                                type="checkbox"
-                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                onChange={(e) => {
-                                    // Handle multiple categories logic if needed, for now simple toggle
-                                }}
+                                type="radio"
+                                name="category"
+                                checked={currentCategory === cat.slug}
+                                onChange={() => handleFilterChange("category", cat.slug)}
+                                className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
                             />
-                            <span className="text-gray-600 group-hover:text-primary transition-colors">{cat}</span>
+                            <span className={`text-sm ${currentCategory === cat.slug ? 'text-primary font-medium' : 'text-gray-600 group-hover:text-primary'}`}>
+                                {cat.name}
+                            </span>
                         </label>
                     ))}
                 </div>
@@ -43,35 +63,48 @@ const FilterSidebar = () => {
             {/* Price Range */}
             <div>
                 <h3 className="font-semibold text-gray-900 mb-4">Price Range</h3>
-                <div className="flex items-center gap-2">
-                    <input
-                        type="number"
-                        placeholder="Min"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary"
-                        onChange={(e) => setPriceRange({ ...priceRange, min: Number(e.target.value) })}
-                    />
-                    <span className="text-gray-400">-</span>
-                    <input
-                        type="number"
-                        placeholder="Max"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary"
-                        onChange={(e) => setPriceRange({ ...priceRange, max: Number(e.target.value) })}
-                    />
+                <div className="space-y-2">
+                    {[
+                        { label: "All Prices", min: "", max: "" },
+                        { label: "Under $50", min: "", max: "50" },
+                        { label: "$50 - $100", min: "50", max: "100" },
+                        { label: "$100 - $200", min: "100", max: "200" },
+                        { label: "$200 - $300", min: "200", max: "300" },
+                        { label: "Over $300", min: "300", max: "" }
+                    ].map((range, index) => {
+                        const isSelected =
+                            (range.min === "" && range.max === "" && !searchParams.get("minPrice") && !searchParams.get("maxPrice")) ||
+                            (searchParams.get("minPrice") === range.min && searchParams.get("maxPrice") === range.max);
+
+                        return (
+                            <label key={index} className="flex items-center gap-2 cursor-pointer group">
+                                <input
+                                    type="radio"
+                                    name="priceRange"
+                                    checked={isSelected}
+                                    onChange={() => {
+                                        const params = new URLSearchParams(searchParams.toString());
+                                        if (range.min) params.set("minPrice", range.min);
+                                        else params.delete("minPrice");
+
+                                        if (range.max) params.set("maxPrice", range.max);
+                                        else params.delete("maxPrice");
+
+                                        params.set("page", "1");
+                                        router.push(`/products?${params.toString()}`);
+                                    }}
+                                    className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                                />
+                                <span className={`text-sm ${isSelected ? 'text-primary font-medium' : 'text-gray-600 group-hover:text-primary'}`}>
+                                    {range.label}
+                                </span>
+                            </label>
+                        );
+                    })}
                 </div>
-                <button
-                    className="mt-3 w-full bg-gray-900 text-white text-sm py-2 rounded-lg hover:bg-gray-800 transition-colors"
-                    onClick={() => {
-                        const params = new URLSearchParams(searchParams.toString());
-                        params.set("minPrice", priceRange.min.toString());
-                        params.set("maxPrice", priceRange.max.toString());
-                        router.push(`/products?${params.toString()}`);
-                    }}
-                >
-                    Apply Price
-                </button>
             </div>
 
-            {/* Colors */}
+            {/* Colors (Hardcoded for now as API doesn't provide global colors list yet) */}
             <div>
                 <h3 className="font-semibold text-gray-900 mb-4">Colors</h3>
                 <div className="flex flex-wrap gap-2">
@@ -81,28 +114,9 @@ const FilterSidebar = () => {
                             className={`w-6 h-6 rounded-full border border-gray-200 shadow-sm hover:scale-110 transition-transform ${searchParams.get('color') === color ? 'ring-2 ring-primary ring-offset-2' : ''
                                 }`}
                             style={{ backgroundColor: color }}
-                            onClick={() => handleFilterChange('color', color)}
+                            onClick={() => handleFilterChange('color', searchParams.get('color') === color ? "" : color)}
                             title={color}
                         />
-                    ))}
-                </div>
-            </div>
-
-            {/* Sizes */}
-            <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Sizes</h3>
-                <div className="flex flex-wrap gap-2">
-                    {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
-                        <button
-                            key={size}
-                            className={`px-3 py-1 border rounded-md text-sm transition-colors ${searchParams.get('size') === size
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'
-                                }`}
-                            onClick={() => handleFilterChange('size', size)}
-                        >
-                            {size}
-                        </button>
                     ))}
                 </div>
             </div>

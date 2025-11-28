@@ -3,9 +3,18 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { categories } from "@/data/mockData";
+import { CategoryType } from "@/types";
 
-const HomeCategories = () => {
+interface HomeCategoriesProps {
+    categories: CategoryType[];
+}
+
+const HomeCategories = ({ categories }: HomeCategoriesProps) => {
+    // Fallback image if category doesn't have one
+    const getCategoryImage = (cat: CategoryType) => {
+        return cat.imageUrl || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=500";
+    };
+
     return (
         <section className="py-12 md:py-16">
             <div className="flex items-center justify-between mb-8">
@@ -23,7 +32,7 @@ const HomeCategories = () => {
                         className="group relative aspect-square overflow-hidden rounded-2xl bg-gray-100"
                     >
                         <Image
-                            src={cat.image}
+                            src={getCategoryImage(cat)}
                             alt={cat.name}
                             fill
                             className="object-cover group-hover:scale-110 transition-transform duration-500"

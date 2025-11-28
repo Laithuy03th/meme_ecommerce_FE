@@ -1,9 +1,10 @@
 import BannerSlider from "@/components/BannerSlider";
 import HomeCategories from "@/components/HomeCategories";
 import ProductList from "@/components/ProductList";
-import { products } from "@/data/mockData";
 import { ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
+import { getCategories, getProducts } from "@/services/api";
+import Pagination from "@/components/Pagination";
 
 const bannerImages = [
   "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=1600",
@@ -11,9 +12,34 @@ const bannerImages = [
   "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=1600"
 ];
 
-export default function Home() {
-  const newArrivals = products.filter(p => p.isNew);
-  const saleProducts = products.filter(p => p.isSale);
+interface HomeProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function Home({ searchParams }: HomeProps) {
+  const resolvedSearchParams = await searchParams;
+  const page = typeof resolvedSearchParams.page === 'string' ? parseInt(resolvedSearchParams.page) - 1 : 0; // API uses 0-based index
+  const size = 20;
+
+  // Fetch data
+  const [categories, productsData] = await Promise.all([
+    getCategories(),
+    getProducts(page < 0 ? 0 : page, size, "newest")
+  ]);
+
+  const products = productsData.content;
+  const totalPages = productsData.totalPages;
+  const currentPage = productsData.number + 1; // Display as 1-based
+
+  // Simulate filtered lists for UI sections if API doesn't return specific flags yet
+  // In a real scenario, we might want separate API calls like /products/flash-sale or /products/new
+  const saleProducts = products.filter(p => p.isSale).length > 0
+    ? products.filter(p => p.isSale)
+    : products.slice(0, 4); // Fallback to first 4 products
+
+  const newArrivals = products.filter(p => p.isNew).length > 0
+    ? products.filter(p => p.isNew)
+    : products.slice(0, 8); // Fallback to first 8 products
 
   return (
     <div className="pb-20">
@@ -25,28 +51,26 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Categories */}
-        <HomeCategories />
+        <HomeCategories categories={categories} />
 
         {/* Flash Sale */}
-        {saleProducts.length > 0 && (
-          <section className="py-12 border-y border-gray-100 bg-red-50/50 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-red-100 rounded-full">
-                    <Zap className="w-6 h-6 text-red-500 fill-current" />
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Flash Sale</h2>
+        <section className="py-12 border-y border-gray-100 bg-red-50/50 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-red-100 rounded-full">
+                  <Zap className="w-6 h-6 text-red-500 fill-current" />
                 </div>
-                <div className="flex items-center gap-4 text-sm font-medium text-red-500 bg-white px-4 py-2 rounded-full shadow-sm border border-red-100">
-                  <span>Ends in:</span>
-                  <span className="font-mono text-lg">05:23:45</span>
-                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Flash Sale</h2>
               </div>
-              <ProductList products={saleProducts} />
+              <div className="flex items-center gap-4 text-sm font-medium text-red-500 bg-white px-4 py-2 rounded-full shadow-sm border border-red-100">
+                <span>Ends in:</span>
+                <span className="font-mono text-lg">05:23:45</span>
+              </div>
             </div>
-          </section>
-        )}
+            <ProductList products={saleProducts} />
+          </div>
+        </section>
 
         {/* New Arrivals */}
         <section className="py-16">
@@ -75,12 +99,20 @@ export default function Home() {
           </div>
         </section>
 
-        {/* All Products (or Best Sellers) */}
-        <section className="py-16">
+        {/* Recommended for You (Main List) */}
+        <section className="py-16" id="products">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Recommended for You</h2>
           </div>
-          <ProductList products={products.slice(0, 20)} />
+
+          <ProductList products={products} />
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            baseUrl="/"
+          />
         </section>
 
       </div>

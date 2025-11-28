@@ -1,8 +1,14 @@
 import ProductView from "@/components/ProductView";
 import ProductList from "@/components/ProductList";
-import { products, reviews } from "@/data/mockData";
 import { Star } from "lucide-react";
 import { notFound } from "next/navigation";
+import { getProduct, getRelatedProducts } from "@/services/api";
+
+// Mock reviews for now as API doesn't provide them yet
+const mockReviews = [
+  { id: 1, user: "John Doe", date: "2023-10-15", rating: 5, comment: "Great product! Highly recommended." },
+  { id: 2, user: "Jane Smith", date: "2023-10-10", rating: 4, comment: "Good quality, but shipping was a bit slow." },
+];
 
 export const generateMetadata = async ({
   params,
@@ -10,12 +16,12 @@ export const generateMetadata = async ({
   params: Promise<{ id: string }>;
 }) => {
   const id = (await params).id;
-  const product = products.find((p) => p.id === id);
+  const product = await getProduct(id);
   if (!product) return { title: "Product Not Found" };
 
   return {
     title: product.name,
-    description: product.description,
+    description: product.description || product.shortDesc,
   };
 };
 
@@ -29,16 +35,19 @@ const ProductPage = async ({
   const id = (await params).id;
   const { size, color } = await searchParams;
 
-  const product = products.find((p) => p.id === id);
+  // Fetch product and related products concurrently
+  const [product, relatedProducts] = await Promise.all([
+    getProduct(id),
+    getRelatedProducts(id)
+  ]);
 
   if (!product) {
     return notFound();
   }
 
+  // Determine initial selection
   const selectedSize = size || (product.sizes?.[0] as string);
   const selectedColor = color || (product.colors?.[0] as string);
-
-  const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -48,14 +57,14 @@ const ProductPage = async ({
         product={product}
         initialSize={selectedSize}
         initialColor={selectedColor}
-        reviewsCount={product.reviews || 0}
+        reviewsCount={product.reviews || mockReviews.length}
       />
 
       {/* REVIEWS & DESCRIPTION TABS */}
       <div className="mb-16">
         <div className="border-b border-gray-200 mb-8 flex justify-between items-center">
           <div className="flex gap-8">
-            <button className="pb-4 border-b-2 border-primary font-semibold text-primary">Reviews ({reviews.length})</button>
+            <button className="pb-4 border-b-2 border-primary font-semibold text-primary">Reviews ({mockReviews.length})</button>
             <button className="pb-4 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700">Description</button>
             <button className="pb-4 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700">Shipping & Returns</button>
           </div>
@@ -65,7 +74,7 @@ const ProductPage = async ({
         </div>
 
         <div className="space-y-6">
-          {reviews.map((review) => (
+          {mockReviews.map((review) => (
             <div key={review.id} className="flex gap-4 p-6 bg-gray-50 rounded-xl">
               <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
                 {review.user.charAt(0)}

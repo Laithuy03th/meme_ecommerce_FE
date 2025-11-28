@@ -12,11 +12,19 @@ import {
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/authStore";
+import { toast } from "react-toastify";
 
 const ProfileDropdown = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+    const { user, isAuthenticated, logout } = useAuthStore();
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -33,9 +41,10 @@ const ProfileDropdown = () => {
     }, []);
 
     const handleLogout = () => {
-        // Implement logout logic here (clear tokens, etc.)
+        logout();
         setIsOpen(false);
         router.push("/login");
+        toast.info("Logged out successfully");
     };
 
     const menuItems = [
@@ -46,19 +55,35 @@ const ProfileDropdown = () => {
         { icon: Settings, label: "Settings", href: "/account/settings" },
     ];
 
+    // Prevent hydration mismatch
+    if (!isMounted) {
+        return (
+            <div className="w-8 h-8 rounded-full bg-slate-100 animate-pulse" />
+        );
+    }
+
+    if (!isAuthenticated || !user) {
+        return (
+            <Link
+                href="/login"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-full hover:bg-gray-800 transition-colors shadow-sm"
+            >
+                <User className="w-4 h-4" />
+                <span>Login</span>
+            </Link>
+        );
+    }
+
     return (
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors focus:outline-none"
+                className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors focus:outline-none ring-2 ring-transparent focus:ring-gray-100"
             >
                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden">
-                    {/* Placeholder Avatar */}
-                    <img
-                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                        alt="User"
-                        className="w-full h-full object-cover"
-                    />
+                    <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                        {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+                    </div>
                 </div>
             </button>
 
@@ -67,16 +92,12 @@ const ProfileDropdown = () => {
                     {/* Header */}
                     <div className="px-6 py-4 border-b border-gray-100">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden">
-                                <img
-                                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                                    alt="User"
-                                    className="w-full h-full object-cover"
-                                />
+                            <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center text-primary font-bold bg-primary/10">
+                                {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
                             </div>
-                            <div>
-                                <p className="font-bold text-gray-900">John Doe</p>
-                                <p className="text-xs text-gray-500">john.doe@example.com</p>
+                            <div className="overflow-hidden">
+                                <p className="font-bold text-gray-900 truncate">{user.fullName}</p>
+                                <p className="text-xs text-gray-500 truncate">{user.email}</p>
                             </div>
                         </div>
                     </div>

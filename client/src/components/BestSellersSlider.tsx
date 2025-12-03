@@ -2,11 +2,11 @@
 
 import { ProductType } from "@/types";
 import { Star, ArrowRight } from "lucide-react";
-import Image from "next/image";
+import SafeImage from "@/components/SafeImage";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import { getSafeImageUrl, handleImageError } from "@/lib/imageUtils";
+import { getSafeImageUrl } from "@/lib/imageUtils";
 
 // Import Swiper styles
 import "swiper/css";
@@ -68,12 +68,13 @@ const BestSellersSlider = ({ products }: BestSellersSliderProps) => {
                                 href={`/products/${product.id}`}
                                 className="group block relative aspect-[3/4] rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
                             >
-                                <Image
+                                <SafeImage
                                     src={safeImage}
+                                    productId={product.id}
+                                    productName={product.name}
                                     alt={product.name}
                                     fill
                                     className="object-cover group-hover:scale-110 transition-transform duration-700"
-                                    onError={(e) => handleImageError(e, product.id, product.name)}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                                 <div className="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-6 group-hover:translate-y-0 transition-transform duration-500">

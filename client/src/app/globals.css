@@ -106,17 +106,34 @@
   }
 }
 
-/* Base Styles */
+/* Base Styles - Premium Warm Background */
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
-  background-color: #f8fafc;
+  @apply antialiased;
+  color: #1e293b;
+
+  /* Base: Warm off-white with subtle cream gradient */
+  background: linear-gradient(135deg, #fdfcfb 0%, #f7f4f0 50%, #fdfcfb 100%);
+
+  /* Layered effects for depth and luxury */
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.05) 0%, transparent 60%),
-    radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.05) 0%, transparent 40%),
-    linear-gradient(rgba(203, 213, 225, 0.4) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(203, 213, 225, 0.4) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 60px 60px, 60px 60px;
-  background-attachment: fixed;
+    /* Top spotlight - warm gold glow */
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(251, 191, 36, 0.08) 0%, transparent 50%),
+    /* Bottom right accent - soft pink/purple */
+    radial-gradient(circle at 90% 90%, rgba(219, 39, 119, 0.06) 0%, transparent 35%),
+    /* Left accent - subtle indigo */
+    radial-gradient(circle at 10% 80%, rgba(99, 102, 241, 0.05) 0%, transparent 30%),
+    /* Subtle noise texture for depth */
+    repeating-linear-gradient(45deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 92, 246, 0.01) 2px,
+      rgba(139, 92, 246, 0.01) 4px),
+    /* Diagonal stripes pattern - very subtle */
+    repeating-linear-gradient(45deg,
+      rgba(217, 119, 6, 0.015) 0px,
+      transparent 1px,
+      transparent 40px,
+      rgba(217, 119, 6, 0.015) 41px);
 }
 
 /* Custom Scrollbar */

@@ -3,9 +3,9 @@
 import ProductInteraction from "@/components/ProductInteraction";
 import { ProductType } from "@/types";
 import { Star, Truck, ShieldCheck, RotateCcw, Sparkles, Award, BadgeCheck } from "lucide-react";
-import Image from "next/image";
+import SafeImage from "@/components/SafeImage";
 import { useState, useEffect } from "react";
-import { getSafeImageUrl, getSafeImageArray, handleImageError } from "@/lib/imageUtils";
+import { getSafeImageUrl, getSafeImageArray } from "@/lib/imageUtils";
 
 const ProductView = ({
     product,
@@ -42,13 +42,14 @@ const ProductView = ({
             {/* IMAGE GALLERY */}
             <div className="w-full lg:w-1/2 space-y-6">
                 <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 shadow-xl group">
-                    <Image
+                    <SafeImage
                         src={currentImage}
+                        productId={product.id}
+                        productName={product.name}
                         alt={product.name}
                         fill
                         className="object-cover transition-all duration-700 ease-out group-hover:scale-105"
                         priority
-                        onError={(e) => handleImageError(e, product.id, product.name)}
                     />
                     {product.isSale && (
                         <div className="absolute top-6 left-6 bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-full font-bold text-lg shadow-xl animate-pulse-slow">
@@ -73,12 +74,13 @@ const ProductView = ({
                                 }`}
                             onClick={() => setCurrentImage(img)}
                         >
-                            <Image
+                            <SafeImage
                                 src={img}
+                                productId={product.id}
+                                productName={product.name}
                                 alt=""
                                 fill
                                 className="object-cover"
-                                onError={(e) => handleImageError(e, product.id, product.name)}
                             />
                         </div>
                     ))}

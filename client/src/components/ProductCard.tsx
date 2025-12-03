@@ -5,11 +5,11 @@ import useWishlistStore from "@/stores/wishlistStore";
 import { useAuthStore } from "@/stores/authStore";
 import { ProductType } from "@/types";
 import { Eye, Heart, ShoppingBag, Star } from "lucide-react";
-import Image from "next/image";
+import SafeImage from "@/components/SafeImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getSafeImageUrl, handleImageError } from "@/lib/imageUtils";
+import { getSafeImageUrl } from "@/lib/imageUtils";
 
 const ProductCard = ({ product }: { product: ProductType }) => {
   const { addToCart } = useCartStore();
@@ -111,12 +111,13 @@ const ProductCard = ({ product }: { product: ProductType }) => {
 
         {/* Image Container */}
         <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
-          <Image
+          <SafeImage
             src={currentImage}
+            productId={product.id}
+            productName={product.name}
             alt={product.name}
             fill
             className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
-            onError={(e) => handleImageError(e, product.id, product.name)}
           />
 
           {/* Overlay Actions */}

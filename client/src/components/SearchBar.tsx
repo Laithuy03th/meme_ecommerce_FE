@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { Search, X, TrendingUp, Sparkles, ArrowRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getProductSuggestions, getPopularSearchKeywords } from "@/services/api";
@@ -8,7 +8,11 @@ import { ProductType, SearchKeywordSuggestion } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
 
-const SearchBar = () => {
+interface SearchBarProps {
+  onToggle?: (isOpen: boolean) => void;
+}
+
+const SearchBar = ({ onToggle }: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<ProductType[]>([]);
   const [popularKeywords, setPopularKeywords] = useState<Record<string, SearchKeywordSuggestion[]>>({});
@@ -19,14 +23,16 @@ const SearchBar = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Determine current category from URL if any
   const currentCategory = searchParams.get("category");
 
-  // Fetch popular keywords on mount
+  // Notify parent when isOpen changes
+  useEffect(() => {
+    onToggle?.(isOpen);
+  }, [isOpen, onToggle]);
+
   useEffect(() => {
     const fetchKeywords = async () => {
       const keywords = await getPopularSearchKeywords();
-      // Group by category
       const grouped = keywords.reduce((acc, item) => {
         if (!acc[item.category]) {
           acc[item.category] = [];
@@ -89,7 +95,7 @@ const SearchBar = () => {
     params.set("category", categorySlug);
     router.push(`/products?${params.toString()}`);
     setIsOpen(false);
-    setQuery(keyword); // Optional: update input to show selected keyword
+    setQuery(keyword);
   };
 
   useEffect(() => {
@@ -106,84 +112,111 @@ const SearchBar = () => {
     <div ref={containerRef} className="relative z-50">
       <form
         onSubmit={handleSearch}
-        className="flex items-center gap-2 bg-gray-100/50 border border-gray-200 rounded-full px-4 py-2 w-[200px] md:w-[300px] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all duration-300"
+        className={`flex items-center gap-3 bg-white/80 backdrop-blur-md border border-white/50 rounded-full px-5 py-2.5 transition-all duration-500 ease-out shadow-sm hover:shadow-md ${isOpen ? "w-[300px] md:w-[450px] ring-2 ring-primary/30 border-primary bg-white shadow-lg" : "w-[220px] md:w-[280px] hover:bg-white"
+          }`}
       >
-        <Search className="w-4 h-4 text-gray-400" />
+        <Search className={`w-5 h-5 transition-colors duration-300 ${isOpen ? "text-primary" : "text-slate-400"}`} />
         <input
           type="text"
           value={query}
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
-          placeholder={currentCategory ? `Search in ${currentCategory}...` : "Search products..."}
-          className="bg-transparent outline-none text-sm w-full text-gray-700 placeholder:text-gray-400"
+          placeholder={currentCategory ? `Search in ${currentCategory}...` : "Search for products..."}
+          className="bg-transparent outline-none text-sm w-full text-slate-700 placeholder:text-slate-400 font-medium"
         />
-        {query && (
-          <button type="button" onClick={() => { setQuery(""); setSuggestions([]); }}>
-            <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+        {query ? (
+          <button type="button" onClick={() => { setQuery(""); setSuggestions([]); }} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
+            <X className="w-4 h-4 text-slate-400 hover:text-slate-600" />
           </button>
+        ) : (
+          <div className={`w-6 h-6 rounded-md  flex items-center justify-center text-[10px] text-slate-400 font-sans transition-opacity duration-300 ${isOpen ? 'opacity-0' : 'opacity-100'}`}>
+
+          </div>
         )}
       </form>
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 w-[300px] md:w-[600px] -left-[50px] md:-left-[150px]">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300 w-[90vw] max-w-[600px] md:w-[600px]">
 
-          {/* Case 1: Autocomplete Suggestions (User is typing) */}
+          {/* Decorative Gradient Line */}
+          <div className="h-1 w-full bg-gradient-to-r from-primary via-purple-500 to-secondary" />
+
+          {/* Case 1: Autocomplete Suggestions */}
           {query.length >= 2 ? (
             <div className="p-2">
               {isLoading ? (
-                <p className="text-xs text-center text-gray-400 py-4">Searching...</p>
+                <div className="flex flex-col items-center justify-center py-8 text-slate-400 gap-2">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-medium">Searching...</span>
+                </div>
               ) : suggestions.length > 0 ? (
                 <>
-                  <p className="text-xs font-semibold text-gray-400 px-3 py-2">PRODUCT SUGGESTIONS</p>
-                  {suggestions.map((product) => (
-                    <Link
-                      key={product.id}
-                      href={`/products/${product.id}`}
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors group"
-                    >
-                      <div className="relative w-10 h-10 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
-                        <Image
-                          src={product.thumbnailUrl || product.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=100"}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 truncate group-hover:text-primary transition-colors">
-                          {product.name}
-                        </h4>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span>{product.categoryName}</span>
-                          <span>•</span>
-                          <span className="font-semibold text-primary">${product.price}</span>
+                  <div className="flex items-center gap-2 px-4 py-3 text-xs font-bold text-slate-400 tracking-wider">
+                    <Sparkles className="w-3 h-3 text-primary" />
+                    SUGGESTED PRODUCTS
+                  </div>
+                  <div className="space-y-1">
+                    {suggestions.map((product) => (
+                      <Link
+                        key={product.id}
+                        href={`/products/${product.id}`}
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-4 px-4 py-3 hover:bg-primary/5 rounded-xl transition-all group border border-transparent hover:border-primary/10"
+                      >
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
+                          <Image
+                            src={product.thumbnailUrl || product.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=100"}
+                            alt={product.name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
                         </div>
-                      </div>
-                    </Link>
-                  ))}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-bold text-slate-700 truncate group-hover:text-primary transition-colors">
+                            {product.name}
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                            <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide">{product.categoryName}</span>
+                            <span className="font-bold text-primary">${product.price}</span>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                      </Link>
+                    ))}
+                  </div>
                 </>
               ) : (
-                <p className="text-xs text-center text-gray-400 py-4">No results found</p>
+                <div className="text-center py-8">
+                  <p className="text-slate-500 font-medium">No results found for "{query}"</p>
+                  <p className="text-xs text-slate-400 mt-1">Try checking your spelling or use different keywords</p>
+                </div>
               )}
             </div>
           ) : (
-            /* Case 2: Quick Keyword Suggestions (User focused but hasn't typed much) */
-            <div className="p-4">
-              <p className="text-xs font-semibold text-gray-400 mb-4 uppercase tracking-wider">Popular Searches</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            /* Case 2: Quick Keyword Suggestions */
+            <div className="p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Popular Searches</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 {Object.entries(popularKeywords).map(([category, items]) => (
                   <div key={category}>
-                    <h4 className="text-sm font-bold text-gray-900 mb-2 border-b border-gray-100 pb-1">{category}</h4>
-                    <ul className="space-y-1">
+                    <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                      {category}
+                    </h4>
+                    <ul className="space-y-2">
                       {items.map((item) => (
                         <li key={item.keyword}>
                           <button
                             onClick={() => handleKeywordClick(item.keyword, item.categorySlug)}
-                            className="text-sm text-gray-600 hover:text-primary hover:translate-x-1 transition-all text-left w-full py-1"
+                            className="text-sm text-slate-600 hover:text-primary hover:translate-x-1 transition-all text-left w-full py-1.5 px-3 rounded-lg hover:bg-slate-50 flex items-center justify-between group"
                           >
-                            {item.keyword}
+                            <span>{item.keyword}</span>
+                            <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-primary" />
                           </button>
                         </li>
                       ))}

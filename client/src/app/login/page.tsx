@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { login as apiLogin } from "@/services/api";
 import { useAuthStore } from "@/stores/authStore";
 import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 
-const LoginPage = () => {
+const LoginForm = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirect = searchParams.get("redirect");
     const [isLoading, setIsLoading] = useState(false);
     const login = useAuthStore((state) => state.login);
 
@@ -25,7 +27,7 @@ const LoginPage = () => {
             const data = await apiLogin({ email, password });
             login(data.user, data.accessToken, data.refreshToken);
             toast.success("Welcome back! 👋");
-            router.push("/");
+            router.push(redirect || "/");
         } catch (error: any) {
             toast.error(error.message || "Invalid email or password");
         } finally {
@@ -163,6 +165,14 @@ const LoginPage = () => {
                 </div>
             </div>
         </div>
+    );
+};
+
+const LoginPage = () => {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <LoginForm />
+        </Suspense>
     );
 };
 

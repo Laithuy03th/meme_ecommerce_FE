@@ -9,7 +9,9 @@ export const getCategories = async (): Promise<CategoryType[]> => {
         if (!res.ok) {
             throw new Error("Failed to fetch categories");
         }
-        return res.json();
+        const data: CategoryType[] = await res.json();
+        // Filter out category with id 5 as requested
+        return data.filter(cat => cat.id !== 5);
     } catch (error) {
         console.error("Error fetching categories:", error);
         return [];

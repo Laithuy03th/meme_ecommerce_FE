@@ -2,7 +2,7 @@
 
 import { checkout } from "@/services/api";
 import useCartStore from "@/stores/cartStore";
-import { ArrowRight, Banknote, CreditCard, Loader2, Truck } from "lucide-react";
+import { ArrowRight, Banknote, CreditCard, Loader2, Truck, Wallet, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -35,27 +35,18 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
         addressId,
         paymentMethod,
         voucherCode,
-        note: "", // Add note field if needed
+        note: "",
         selectedItemIds,
       });
 
-      // If selectedItemIds provided, remove only those. Otherwise clear cart.
       if (selectedItemIds && selectedItemIds.length > 0) {
-        // Remove selected items one by one (or implement bulk remove in store)
-        // Since we don't have bulk remove, we can just fetchCart to sync with backend
-        // assuming backend removes them from cart upon checkout.
-        // But if backend doesn't support partial checkout natively and we are just sending IDs,
-        // we might need to manually remove them if backend logic is "create order from these items".
-        // Let's assume backend handles cart cleanup if it supports checkout.
-        // If backend is standard, checkout usually clears the cart or the items ordered.
-        // So fetching cart is safest.
         await fetchCart();
       } else {
         clearCart();
       }
 
       toast.success("Order placed successfully! 🎉");
-      router.push("/account/orders"); // Redirect to orders page
+      router.push("/account/orders");
     } catch (error: any) {
       toast.error(error.message || "Failed to place order");
     } finally {
@@ -65,80 +56,118 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
 
   return (
     <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
-      <h3 className="text-lg font-semibold text-gray-900">Select Payment Method</h3>
+      <div className="flex items-center gap-3 mb-4 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+          <Wallet className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900">Payment Method</h3>
+          <p className="text-gray-500 text-sm mt-0.5">Choose how you want to pay</p>
+        </div>
+      </div>
 
       <div className="grid gap-4">
         <label
-          className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === "COD"
-            ? "border-primary bg-primary/5"
-            : "border-gray-100 hover:border-gray-200"
+          className={`flex items-center gap-5 p-6 rounded-2xl border-2 cursor-pointer transition-all shadow-sm hover:shadow-lg bg-white ${paymentMethod === "COD"
+              ? "border-primary shadow-primary/10"
+              : "border-gray-100 hover:border-primary/30"
             }`}
         >
+          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "COD" ? "border-primary bg-gradient-to-r from-primary to-secondary" : "border-gray-300"
+            }`}>
+            {paymentMethod === "COD" && (
+              <CheckCircle className="w-4 h-4 text-white" />
+            )}
+          </div>
           <input
             type="radio"
             name="paymentMethod"
             value="COD"
             checked={paymentMethod === "COD"}
             onChange={() => setPaymentMethod("COD")}
-            className="w-5 h-5 text-primary focus:ring-primary"
+            className="hidden"
           />
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 text-green-600">
-            <Truck className="w-5 h-5" />
+          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 text-green-600 shadow-sm">
+            <Truck className="w-7 h-7" />
           </div>
           <div className="flex-1">
-            <span className="font-bold text-gray-900 block">Cash on Delivery (COD)</span>
-            <span className="text-sm text-gray-500">Pay when you receive your order</span>
+            <span className="text-lg font-bold text-gray-900 block">Cash on Delivery (COD)</span>
+            <span className="text-sm text-gray-500 mt-1">Pay when you receive your order at your doorstep</span>
           </div>
         </label>
 
         <label
-          className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === "BANKING"
-            ? "border-primary bg-primary/5"
-            : "border-gray-100 hover:border-gray-200"
+          className={`flex items-center gap-5 p-6 rounded-2xl border-2 cursor-pointer transition-all shadow-sm hover:shadow-lg bg-white ${paymentMethod === "BANKING"
+              ? "border-primary shadow-primary/10"
+              : "border-gray-100 hover:border-primary/30"
             }`}
         >
+          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "BANKING" ? "border-primary bg-gradient-to-r from-primary to-secondary" : "border-gray-300"
+            }`}>
+            {paymentMethod === "BANKING" && (
+              <CheckCircle className="w-4 h-4 text-white" />
+            )}
+          </div>
           <input
             type="radio"
             name="paymentMethod"
             value="BANKING"
             checked={paymentMethod === "BANKING"}
             onChange={() => setPaymentMethod("BANKING")}
-            className="w-5 h-5 text-primary focus:ring-primary"
+            className="hidden"
           />
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600">
-            <Banknote className="w-5 h-5" />
+          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600 shadow-sm">
+            <Banknote className="w-7 h-7" />
           </div>
           <div className="flex-1">
-            <span className="font-bold text-gray-900 block">Bank Transfer</span>
-            <span className="text-sm text-gray-500">Transfer via QR Code or Bank App</span>
+            <span className="text-lg font-bold text-gray-900 block">Bank Transfer</span>
+            <span className="text-sm text-gray-500 mt-1">Transfer via QR Code or Mobile Banking App</span>
           </div>
         </label>
       </div>
 
       {paymentMethod === "BANKING" && (
-        <div className="p-4 bg-blue-50 text-blue-800 rounded-xl text-sm">
-          <p className="font-semibold mb-1">Bank Account Info:</p>
-          <p>Bank: MB Bank</p>
-          <p>Account No: 0000123456789</p>
-          <p>Name: MEME SHOP</p>
-          <p className="mt-2 text-xs opacity-80">Please include your phone number in the transfer content.</p>
+        <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-100 rounded-2xl shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-white" />
+            </div>
+            <h4 className="font-bold text-blue-900">Bank Account Information</h4>
+          </div>
+          <div className="space-y-2 text-blue-900">
+            <div className="flex justify-between py-2 border-b border-blue-200">
+              <span className="font-medium">Bank Name:</span>
+              <span className="font-bold">MB Bank</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-blue-200">
+              <span className="font-medium">Account Number:</span>
+              <span className="font-bold font-mono">0000123456789</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-blue-200">
+              <span className="font-medium">Account Name:</span>
+              <span className="font-bold">MEME SHOP</span>
+            </div>
+          </div>
+          <p className="mt-4 text-xs text-blue-700 bg-blue-100 px-3 py-2 rounded-lg">
+            💡 <strong>Important:</strong> Please include your phone number in the transfer content for faster verification.
+          </p>
         </div>
       )}
 
       <button
         type="submit"
         disabled={isProcessing}
-        className="w-full bg-gray-900 hover:bg-black transition-all duration-300 text-white py-4 rounded-xl cursor-pointer flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg"
+        className="w-full bg-gradient-to-r from-primary to-secondary text-white py-5 rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl hover:shadow-primary/40 transition-all flex items-center justify-center gap-3 mt-4 disabled:opacity-50 disabled:cursor-not-allowed group"
       >
         {isProcessing ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-6 h-6 animate-spin" />
             Processing Order...
           </>
         ) : (
           <>
             Place Order
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </>
         )}
       </button>

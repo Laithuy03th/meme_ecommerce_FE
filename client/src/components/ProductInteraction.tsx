@@ -1,6 +1,7 @@
 "use client";
 
 import useCartStore from "@/stores/cartStore";
+import { useAuthStore } from "@/stores/authStore";
 import useWishlistStore from "@/stores/wishlistStore";
 import { ProductType } from "@/types";
 import { Heart, Minus, Plus, ShoppingCart } from "lucide-react";
@@ -83,7 +84,14 @@ const ProductInteraction = ({
     return undefined;
   };
 
+  const { isAuthenticated } = useAuthStore();
+  // ...
+
   const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=/products/${product.id}`); // Or current path
+      return false;
+    }
     if (!validateSelection()) return false;
     const variantId = getVariantId();
     await addToCart(product, quantity, variantId, color, size);
@@ -91,6 +99,10 @@ const ProductInteraction = ({
   };
 
   const handleBuyNow = async () => {
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=/products/${product.id}`);
+      return;
+    }
     if (!validateSelection()) return;
 
     const variantId = getVariantId();
@@ -129,6 +141,10 @@ const ProductInteraction = ({
   };
 
   const handleToggleWishlist = () => {
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=/products/${product.id}`);
+      return;
+    }
     if (isLiked) {
       removeItem(product.id);
     } else {

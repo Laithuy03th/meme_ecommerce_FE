@@ -2,7 +2,7 @@
 
 import { deleteAddress, getAddresses, setDefaultAddress } from "@/services/api";
 import { AddressType } from "@/types";
-import { ArrowRight, Edit2, MapPin, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Edit2, MapPin, Plus, Trash2, Home, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import AddressModal from "./AddressModal";
@@ -71,35 +71,46 @@ const ShippingForm = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Shipping Address</h2>
+      <div className="flex items-center justify-between mb-6 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+            <Home className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Shipping Address</h2>
+            <p className="text-gray-500 text-sm mt-0.5">Choose where to deliver your order</p>
+          </div>
+        </div>
         <button
           onClick={() => {
             setEditingAddress(undefined);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-dark"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 group"
         >
-          <Plus className="w-4 h-4" />
-          Add New Address
+          <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+          Add New
         </button>
       </div>
 
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
+            <div key={i} className="h-32 bg-white rounded-2xl animate-pulse shadow-sm" />
           ))}
         </div>
       ) : addresses.length === 0 ? (
-        <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-          <MapPin className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-500 mb-4">No addresses found. Please add one to continue.</p>
+        <div className="text-center py-16 bg-white rounded-3xl border-2 border-dashed border-gray-200 shadow-sm">
+          <div className="w-20 h-20 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MapPin className="w-10 h-10 text-primary" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">No addresses found</h3>
+          <p className="text-gray-500 mb-6">Please add a shipping address to continue with your order</p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-gray-900 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-800"
+            className="bg-gradient-to-r from-primary to-secondary text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-primary/30 hover:shadow-xl transition-all"
           >
-            Add Address
+            Add Your First Address
           </button>
         </div>
       ) : (
@@ -107,33 +118,45 @@ const ShippingForm = ({
           {addresses.map((addr) => (
             <div
               key={addr.id}
-              className={`relative p-4 rounded-xl border-2 transition-all cursor-pointer ${selectedId === addr.id
-                ? "border-primary bg-primary/5"
-                : "border-gray-100 hover:border-gray-200"
+              className={`relative p-6 rounded-2xl border-2 transition-all cursor-pointer shadow-sm hover:shadow-lg bg-white ${selectedId === addr.id
+                  ? "border-primary shadow-primary/10"
+                  : "border-gray-100 hover:border-primary/30"
                 }`}
               onClick={() => setSelectedId(addr.id)}
             >
               <div className="flex justify-between items-start">
-                <div className="flex gap-3">
-                  <div className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedId === addr.id ? "border-primary" : "border-gray-300"
+                <div className="flex gap-4 flex-1">
+                  <div className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedId === addr.id ? "border-primary bg-gradient-to-r from-primary to-secondary" : "border-gray-300"
                     }`}>
                     {selectedId === addr.id && (
-                      <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                      <CheckCircle className="w-4 h-4 text-white" />
                     )}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900">{addr.fullName}</span>
-                      <span className="text-gray-500 text-sm">| {addr.phone}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-lg font-bold text-gray-900">{addr.fullName}</span>
+                      <span className="text-gray-500">|</span>
+                      <span className="text-gray-600 font-medium">{addr.phone}</span>
                       {(addr.default || addr.isDefault) && (
-                        <span className="bg-blue-100 text-blue-600 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                        <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wide shadow-sm">
                           Default
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-600 text-sm mt-1">
+                    <p className="text-gray-600 leading-relaxed">
                       {addr.addressLine1}, {addr.ward}, {addr.district}, {addr.province}
                     </p>
+                    {!(addr.default || addr.isDefault) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSetDefault(addr.id);
+                        }}
+                        className="mt-3 text-xs text-primary hover:text-primary-dark font-bold underline"
+                      >
+                        Set as Default
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -143,32 +166,21 @@ const ShippingForm = ({
                       setEditingAddress(addr);
                       setIsModalOpen(true);
                     }}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2.5 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <Edit2 className="w-5 h-5" />
                   </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(addr.id);
                     }}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
               </div>
-              {!(addr.default || addr.isDefault) && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSetDefault(addr.id);
-                  }}
-                  className="absolute bottom-4 right-4 text-xs text-gray-400 hover:text-primary font-medium"
-                >
-                  Set as Default
-                </button>
-              )}
             </div>
           ))}
         </div>
@@ -177,10 +189,10 @@ const ShippingForm = ({
       <button
         onClick={handleContinue}
         disabled={!selectedId}
-        className="w-full bg-gray-900 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+        className="w-full bg-gradient-to-r from-primary to-secondary text-white py-5 rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl hover:shadow-primary/40 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
       >
         Continue to Payment
-        <ArrowRight className="w-4 h-4" />
+        <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
       </button>
 
       <AddressModal

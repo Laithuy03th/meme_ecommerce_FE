@@ -5,7 +5,7 @@ import ShippingForm from "@/components/ShippingForm";
 import { validateVoucher } from "@/services/api";
 import useCartStore from "@/stores/cartStore";
 import { VoucherValidationResponse } from "@/types";
-import { Minus, Plus, ShoppingBag, Trash2, ArrowRight, CheckSquare, Square } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, ArrowRight, CheckSquare, Tag, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -88,17 +88,17 @@ const CartPage = () => {
 
   if (cart.length === 0 && !isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-          <ShoppingBag className="w-10 h-10 text-gray-400" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-32 h-32 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-3xl flex items-center justify-center animate-float">
+          <ShoppingBag className="w-16 h-16 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">Your cart is empty</h2>
-        <p className="text-gray-500">Looks like you haven't added anything to your cart yet.</p>
+        <h2 className="text-3xl font-bold text-gray-900">Your cart is empty</h2>
+        <p className="text-gray-500 text-center max-w-md">Looks like you haven't added anything to your cart yet. Explore our products!</p>
         <Link
           href="/products"
-          className="mt-4 bg-primary text-white px-8 py-3 rounded-full font-medium hover:bg-primary-dark transition-colors shadow-lg hover:shadow-xl"
+          className="mt-4 bg-gradient-to-r from-primary to-secondary text-white px-10 py-4 rounded-full font-bold hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 flex items-center gap-2 group"
         >
-          Start Shopping
+          Start Shopping <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
     );
@@ -107,33 +107,42 @@ const CartPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* STEPS */}
-      <div className="flex items-center justify-center mb-12">
+      <div className="flex items-center justify-center mb-16">
         <div className="flex items-center">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === 'cart' ? 'bg-primary text-white' : 'bg-green-500 text-white'}`}>1</div>
-          <span className={`ml-2 font-medium ${step === 'cart' ? 'text-gray-900' : 'text-gray-500'}`}>Cart</span>
+          <div className={`relative w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${step === 'cart' ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30' : 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-lg shadow-amber-500/30'}`}>
+            1
+            {step !== 'cart' && <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center text-white text-xs">✓</div>}
+          </div>
+          <span className={`ml-3 font-bold ${step === 'cart' ? 'text-gray-900' : 'text-gray-500'}`}>Cart</span>
         </div>
-        <div className={`w-20 h-1 mx-4 ${step !== 'cart' ? 'bg-green-500' : 'bg-gray-200'}`} />
+        <div className={`w-24 h-1 mx-6 rounded-full transition-all duration-500 ${step !== 'cart' ? 'bg-gradient-to-r from-amber-500 to-yellow-500' : 'bg-gray-200'}`} />
         <div className="flex items-center">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === 'address' ? 'bg-primary text-white' : (step === 'payment' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500')}`}>2</div>
-          <span className={`ml-2 font-medium ${step === 'address' ? 'text-gray-900' : 'text-gray-500'}`}>Address</span>
+          <div className={`relative w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${step === 'address' ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30' : (step === 'payment' ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-lg shadow-amber-500/30' : 'bg-gray-200 text-gray-500')}`}>
+            2
+            {step === 'payment' && <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center text-white text-xs">✓</div>}
+          </div>
+          <span className={`ml-3 font-bold ${step === 'address' ? 'text-gray-900' : 'text-gray-500'}`}>Address</span>
         </div>
-        <div className={`w-20 h-1 mx-4 ${step === 'payment' ? 'bg-green-500' : 'bg-gray-200'}`} />
+        <div className={`w-24 h-1 mx-6 rounded-full transition-all duration-500 ${step === 'payment' ? 'bg-gradient-to-r from-amber-500 to-yellow-500' : 'bg-gray-200'}`} />
         <div className="flex items-center">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === 'payment' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>3</div>
-          <span className={`ml-2 font-medium ${step === 'payment' ? 'text-gray-900' : 'text-gray-500'}`}>Payment</span>
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${step === 'payment' ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30' : 'bg-gray-200 text-gray-500'}`}>3</div>
+          <span className={`ml-3 font-bold ${step === 'payment' ? 'text-gray-900' : 'text-gray-500'}`}>Payment</span>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-12">
+      <div className="grid lg:grid-cols-3 gap-8">
         {/* LEFT COLUMN */}
         <div className="lg:col-span-2 space-y-6">
           {step === "cart" && (
             <>
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-bold text-gray-900">Shopping Cart ({cart.length} items)</h1>
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isAllSelected ? 'bg-primary border-primary text-white' : 'border-gray-300 bg-white'}`}>
-                    {isAllSelected && <CheckSquare className="w-3.5 h-3.5" />}
+              <div className="flex items-center justify-between mb-6 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
+                  <p className="text-gray-500 mt-1">{cart.length} items in your cart</p>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer select-none group">
+                  <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${isAllSelected ? 'bg-gradient-to-r from-primary to-secondary border-primary scale-110' : 'border-gray-300 bg-white group-hover:border-primary'}`}>
+                    {isAllSelected && <CheckSquare className="w-4 h-4 text-white" />}
                   </div>
                   <input
                     type="checkbox"
@@ -141,26 +150,26 @@ const CartPage = () => {
                     checked={isAllSelected}
                     onChange={isAllSelected ? clearSelection : selectAll}
                   />
-                  <span className="text-sm font-medium text-gray-700">Select All</span>
+                  <span className="font-bold text-gray-700 group-hover:text-primary transition-colors">Select All</span>
                 </label>
               </div>
 
               <div className="space-y-4">
                 {cart.map((item) => (
-                  <div key={item.id} className={`flex gap-4 border rounded-2xl p-4 transition-all ${selectedItemIds.includes(item.id) ? 'border-primary bg-primary/5' : 'border-gray-100 bg-white'}`}>
+                  <div key={item.id} className={`flex gap-6 bg-white rounded-2xl p-6 transition-all duration-300 border-2 shadow-sm hover:shadow-lg ${selectedItemIds.includes(item.id) ? 'border-primary shadow-primary/10' : 'border-gray-100 hover:border-primary/30'}`}>
                     {/* Checkbox */}
                     <div className="flex items-center">
                       <button
                         onClick={() => toggleSelection(item.id)}
-                        className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedItemIds.includes(item.id) ? 'bg-primary border-primary text-white' : 'border-gray-300 bg-white'}`}
+                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${selectedItemIds.includes(item.id) ? 'bg-gradient-to-r from-primary to-secondary border-primary scale-110' : 'border-gray-300 bg-white hover:border-primary'}`}
                       >
-                        {selectedItemIds.includes(item.id) && <CheckSquare className="w-3.5 h-3.5" />}
+                        {selectedItemIds.includes(item.id) && <CheckSquare className="w-4 h-4 text-white" />}
                       </button>
                     </div>
 
-                    <div className="relative w-24 h-24 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+                    <div className="relative w-28 h-28 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-md hover:shadow-xl transition-shadow duration-300">
                       <Link href={`/products/${item.productId}`}>
-                        <Image src={item.thumbnailUrl} alt={item.productName} fill className="object-cover" />
+                        <Image src={item.thumbnailUrl} alt={item.productName} fill className="object-cover hover:scale-110 transition-transform duration-500" />
                       </Link>
                     </div>
 
@@ -168,38 +177,38 @@ const CartPage = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <Link href={`/products/${item.productId}`}>
-                            <h3 className="font-semibold text-gray-900 hover:text-primary transition-colors">{item.productName}</h3>
+                            <h3 className="text-lg font-bold text-gray-900 hover:text-primary transition-colors">{item.productName}</h3>
                           </Link>
-                          <div className="flex gap-2 text-sm text-gray-500 mt-1">
-                            {item.color && <span>Color: {item.color}</span>}
-                            {item.size && <span>Size: {item.size}</span>}
+                          <div className="flex gap-3 text-sm text-gray-500 mt-2">
+                            {item.color && <span className="px-2 py-1 bg-gray-100 rounded-lg font-medium">Color: {item.color}</span>}
+                            {item.size && <span className="px-2 py-1 bg-gray-100 rounded-lg font-medium">Size: {item.size}</span>}
                           </div>
                         </div>
                         <button
                           onClick={() => removeFromCart(item.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                          className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all duration-300"
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
 
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center border border-gray-200 rounded-lg">
+                      <div className="flex justify-between items-center mt-4">
+                        <div className="flex items-center bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm">
                           <button
                             onClick={() => handleQuantityChange(item.id, item.quantity, "decrement")}
-                            className="p-2 hover:bg-gray-50 text-gray-500"
+                            className="p-3 hover:bg-gray-50 text-gray-600 transition-colors"
                           >
-                            <Minus className="w-3 h-3" />
+                            <Minus className="w-4 h-4" />
                           </button>
-                          <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                          <span className="w-12 text-center font-bold text-gray-900">{item.quantity}</span>
                           <button
                             onClick={() => handleQuantityChange(item.id, item.quantity, "increment")}
-                            className="p-2 hover:bg-gray-50 text-gray-500"
+                            className="p-3 hover:bg-gray-50 text-gray-600 transition-colors"
                           >
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-4 h-4" />
                           </button>
                         </div>
-                        <span className="font-bold text-gray-900">${item.totalPrice.toFixed(2)}</span>
+                        <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">${item.totalPrice.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -228,48 +237,55 @@ const CartPage = () => {
 
         {/* RIGHT COLUMN - SUMMARY */}
         <div className="lg:col-span-1">
-          <div className="bg-gray-50 rounded-2xl p-6 sticky top-24 space-y-6">
-            <h2 className="text-xl font-bold text-gray-900">Order Summary</h2>
-
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between text-gray-600">
-                <span>Selected Items ({selectedItems.length})</span>
-                <span>${selectedSubtotal.toFixed(2)}</span>
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 sticky top-24 space-y-6 shadow-2xl shadow-primary/10 border border-white">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Shipping</span>
-                <span>${shippingFee.toFixed(2)}</span>
+              <h2 className="text-2xl font-bold text-gray-900">Order Summary</h2>
+            </div>
+
+            <div className="space-y-4 text-base">
+              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                <span className="text-gray-600 font-medium">Selected Items ({selectedItems.length})</span>
+                <span className="font-bold text-gray-900">${selectedSubtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                <span className="text-gray-600 font-medium">Shipping</span>
+                <span className="font-bold text-gray-900">${shippingFee.toFixed(2)}</span>
               </div>
               {discount > 0 && (
-                <div className="flex justify-between text-green-600 font-medium">
-                  <span>Discount</span>
-                  <span>-${discount.toFixed(2)}</span>
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-green-600 font-medium">Discount</span>
+                  <span className="font-bold text-green-600">-${discount.toFixed(2)}</span>
                 </div>
               )}
-              <div className="h-px bg-gray-200 my-2" />
-              <div className="flex justify-between text-lg font-bold text-gray-900">
-                <span>Total</span>
-                <span>${finalTotal.toFixed(2)}</span>
+              <div className="flex justify-between items-center pt-4">
+                <span className="text-xl font-bold text-gray-900">Total</span>
+                <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">${finalTotal.toFixed(2)}</span>
               </div>
             </div>
 
             {/* VOUCHER INPUT */}
             {step === "cart" && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Voucher Code</label>
+              <div className="space-y-3 pt-6 border-t border-gray-200">
+                <div className="flex items-center gap-2 text-gray-900 font-bold">
+                  <Tag className="w-5 h-5 text-primary" />
+                  <label>Promo Code</label>
+                </div>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={voucherCode}
                     onChange={(e) => setVoucherCode(e.target.value)}
-                    placeholder="Enter code"
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    placeholder="Enter your code"
+                    className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-all"
                     disabled={!!appliedVoucher}
                   />
                   {appliedVoucher ? (
                     <button
                       onClick={handleRemoveVoucher}
-                      className="bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+                      className="bg-red-100 text-red-600 px-5 py-3 rounded-xl text-sm font-bold hover:bg-red-200 transition-colors"
                     >
                       Remove
                     </button>
@@ -277,15 +293,15 @@ const CartPage = () => {
                     <button
                       onClick={handleApplyVoucher}
                       disabled={isValidatingVoucher || !voucherCode}
-                      className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-gradient-to-r from-primary to-secondary text-white px-5 py-3 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isValidatingVoucher ? "..." : "Apply"}
                     </button>
                   )}
                 </div>
                 {appliedVoucher && (
-                  <p className="text-xs text-green-600">
-                    Voucher applied: {appliedVoucher.voucher?.code} (-${appliedVoucher.discountAmount})
+                  <p className="text-sm text-green-600 font-medium bg-green-50 px-3 py-2 rounded-lg">
+                    ✓ Voucher applied: {appliedVoucher.voucher?.code} (-${appliedVoucher.discountAmount})
                   </p>
                 )}
               </div>
@@ -295,18 +311,18 @@ const CartPage = () => {
               <button
                 onClick={handleProceedToCheckout}
                 disabled={selectedItems.length === 0}
-                className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-primary to-secondary text-white py-5 rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl hover:shadow-primary/40 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
               >
-                Checkout ({selectedItems.length}) <ArrowRight className="w-5 h-5" />
+                Checkout ({selectedItems.length}) <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </button>
             )}
 
             {step !== "cart" && (
               <button
                 onClick={() => setStep(step === 'payment' ? 'address' : 'cart')}
-                className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                className="w-full bg-white border-2 border-gray-300 text-gray-700 py-4 rounded-2xl font-bold hover:bg-gray-50 transition-all"
               >
-                Back
+                ← Back
               </button>
             )}
           </div>

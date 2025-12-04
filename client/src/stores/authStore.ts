@@ -6,10 +6,10 @@ import { logout as apiLogout } from '@/services/api';
 interface AuthState {
     user: UserType | null;
     accessToken: string | null;
-    refreshToken: string | null;
+    // ❌ REMOVED: refreshToken - giờ lưu trong HttpOnly Cookie, FE không cần/không nên lưu
     isAuthenticated: boolean;
-    login: (user: UserType, accessToken: string, refreshToken: string) => void;
-    updateTokens: (user: UserType, accessToken: string, refreshToken: string) => void;
+    login: (user: UserType, accessToken: string) => void;
+    updateTokens: (user: UserType, accessToken: string) => void;
     logout: () => void;
 }
 
@@ -18,17 +18,16 @@ export const useAuthStore = create<AuthState>()(
         (set, get) => ({
             user: null,
             accessToken: null,
-            refreshToken: null,
             isAuthenticated: false,
-            login: (user, accessToken, refreshToken) => {
-                set({ user, accessToken, refreshToken, isAuthenticated: true });
+            login: (user, accessToken) => {
+                set({ user, accessToken, isAuthenticated: true });
                 // Fetch cart from server
                 const { fetchCart } = require('./cartStore').default.getState();
                 fetchCart();
             },
-            updateTokens: (user, accessToken, refreshToken) => {
+            updateTokens: (user, accessToken) => {
                 // Update tokens without side effects (used during token refresh)
-                set({ user, accessToken, refreshToken, isAuthenticated: true });
+                set({ user, accessToken, isAuthenticated: true });
             },
             logout: async () => {
                 const token = get().accessToken;
@@ -39,7 +38,7 @@ export const useAuthStore = create<AuthState>()(
                 const { clearCart } = require('./cartStore').default.getState();
                 clearCart();
 
-                set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+                set({ user: null, accessToken: null, isAuthenticated: false });
             },
         }),
         {

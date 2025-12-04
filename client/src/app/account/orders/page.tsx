@@ -78,15 +78,15 @@ const OrdersPage = () => {
                                 </div>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-600' :
-                                    order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-600' :
-                                        order.status === 'CANCELLED' ? 'bg-red-100 text-red-600' :
-                                            'bg-blue-100 text-blue-600'
+                                order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-600' :
+                                    order.status === 'CANCELLED' ? 'bg-red-100 text-red-600' :
+                                        'bg-blue-100 text-blue-600'
                                 }`}>
                                 {order.status}
                             </span>
                         </div>
                         <div className="flex justify-between items-center text-sm border-t border-gray-100 pt-4">
-                            <span className="text-gray-500">{order.items.length} items</span>
+                            <span className="text-gray-500">{order.items?.length || 0} items</span>
                             <div className="flex items-center gap-2">
                                 <span className="font-bold text-gray-900">${order.totalAmount.toFixed(2)}</span>
                                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />

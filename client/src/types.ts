@@ -176,7 +176,7 @@ export type UserType = {
 
 export type LoginResponse = {
   accessToken: string;
-  refreshToken: string;
+  // ❌ REMOVED: refreshToken - giờ ở HttpOnly Cookie, không trả trong JSON
   tokenType: string | null;
   user: UserType;
 };
@@ -253,7 +253,7 @@ export type OrderType = {
   shippingFee: number;
   note?: string;
   createdAt: string;
-  items: OrderItemType[];
+  items?: OrderItemType[]; // Optional to handle cases when items not loaded
   timeline?: OrderTimelineType[];
   shippingAddress?: {
     fullName: string;

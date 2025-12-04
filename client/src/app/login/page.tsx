@@ -25,7 +25,8 @@ const LoginForm = () => {
 
         try {
             const data = await apiLogin({ email, password });
-            login(data.user, data.accessToken, data.refreshToken);
+            // ✅ Refresh token tự động lưu trong HttpOnly Cookie, không cần truyền vào
+            login(data.user, data.accessToken);
             toast.success("Welcome back! 👋");
             router.push(redirect || "/");
         } catch (error: any) {

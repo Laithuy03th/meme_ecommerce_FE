@@ -8,7 +8,7 @@ import { Eye, Heart, ShoppingBag, Star } from "lucide-react";
 import SafeImage from "@/components/SafeImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getSafeImageUrl } from "@/lib/imageUtils";
 
 const ProductCard = ({ product }: { product: ProductType }) => {
@@ -16,6 +16,8 @@ const ProductCard = ({ product }: { product: ProductType }) => {
   const { isInWishlist, addItem, removeItem } = useWishlistStore();
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || "");
   const [isHovered, setIsHovered] = useState(false);
+  const [isLiked, setIsLiked] = useState(false); // Client-only state
+  const [isMounted, setIsMounted] = useState(false);
 
   // Use safe image URL with fallback
   const mainImage = getSafeImageUrl(
@@ -25,7 +27,11 @@ const ProductCard = ({ product }: { product: ProductType }) => {
   );
   const [currentImage, setCurrentImage] = useState(mainImage);
 
-  const isLiked = isInWishlist(product.id);
+  // Sync wishlist state only on client
+  useEffect(() => {
+    setIsMounted(true);
+    setIsLiked(isInWishlist(product.id));
+  }, [isInWishlist, product.id]);
 
   // Handle color selection on card
   const handleColorSelect = (e: React.MouseEvent, color: string) => {
@@ -99,15 +105,17 @@ const ProductCard = ({ product }: { product: ProductType }) => {
         </div>
 
         {/* Wishlist Button (Always visible on mobile, hover on desktop) */}
-        <button
-          onClick={handleToggleWishlist}
-          className={`absolute top-4 right-4 z-20 p-2.5 rounded-full backdrop-blur-md transition-all duration-300 shadow-lg ${isLiked
-            ? "bg-rose-50 text-rose-500"
-            : "bg-white/80 text-slate-400 hover:bg-white hover:text-rose-500"
-            } ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-[-10px] opacity-0'} md:opacity-0 md:group-hover:opacity-100`}
-        >
-          <Heart className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`} />
-        </button>
+        {isMounted && (
+          <button
+            onClick={handleToggleWishlist}
+            className={`absolute top-4 right-4 z-20 p-2.5 rounded-full backdrop-blur-md transition-all duration-300 shadow-lg ${isLiked
+              ? "bg-rose-50 text-rose-500"
+              : "bg-white/80 text-slate-400 hover:bg-white hover:text-rose-500"
+              } ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-[-10px] opacity-0'} md:opacity-0 md:group-hover:opacity-100`}
+          >
+            <Heart className={`w-5 h-5 ${isLiked ? "fill-current" : ""}`} />
+          </button>
+        )}
 
         {/* Image Container */}
         <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">

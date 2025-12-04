@@ -1,9 +1,14 @@
 import { LoginResponse, RegisterResponse } from "@/types";
 import { BASE_URL } from "./base";
 
+/**
+ * Login API - Refresh token sẽ được set vào HttpOnly Cookie tự động
+ * Frontend chỉ nhận accessToken và user trong response
+ */
 export const login = async (data: { email: string; password: string }): Promise<LoginResponse> => {
     const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
+        credentials: 'include', // ✅ Quan trọng: để browser nhận/gửi cookie
         headers: {
             "Content-Type": "application/json",
         },
@@ -35,13 +40,18 @@ export const register = async (data: { email: string; password: string; fullName
     return res.json();
 };
 
-export const refreshToken = async (refreshToken: string): Promise<LoginResponse> => {
+/**
+ * Refresh Token API - Đọc refresh token từ HttpOnly Cookie
+ * KHÔNG cần gửi refresh token trong body nữa
+ */
+export const refreshToken = async (): Promise<LoginResponse> => {
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
+        credentials: 'include', // ✅ Quan trọng: browser tự gửi cookie
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({ refreshToken }),
+        // ❌ KHÔNG gửi body nữa, refresh token ở cookie
     });
 
     if (!res.ok) {
@@ -51,10 +61,14 @@ export const refreshToken = async (refreshToken: string): Promise<LoginResponse>
     return res.json();
 };
 
+/**
+ * Logout API - Xóa refresh token cookie
+ */
 export const logout = async (token: string): Promise<void> => {
     try {
         await fetch(`${BASE_URL}/auth/logout`, {
             method: "POST",
+            credentials: 'include', // ✅ Để cookie bị xóa
             headers: {
                 "Authorization": `Bearer ${token}`,
             },
@@ -64,27 +78,16 @@ export const logout = async (token: string): Promise<void> => {
     }
 };
 
+/**
+ * Get current user info
+ */
 export const getMe = async (token?: string): Promise<any> => {
-    // If token is provided, use it (for initial verification), otherwise use authenticatedFetch if we were to use it here.
-    // But since this is often used during initialization where we might want to manually pass the token:
-    // However, to avoid circular dependency if we use authenticatedFetch here (which uses authStore), 
-    // we should stick to manual fetch if we are passing token, or use authenticatedFetch if we assume store is set.
-    // In AuthInitializer, we have the token.
-
-    // Let's use manual fetch to be safe and simple for initialization check.
-    // Wait, AuthInitializer imports getMe.
-
-    // Actually, let's just use authenticatedFetch and let it handle the token from store? 
-    // No, AuthInitializer is setting up the store.
-
-    // So we need a version that takes a token.
     if (!token) {
-        // Fallback to trying to get from store or just error?
-        // For now, let's assume token is passed or we throw.
         throw new Error("Token required for getMe");
     }
 
     const res = await fetch(`${BASE_URL}/users/me`, {
+        credentials: 'include', // ✅ Consistency
         headers: {
             "Authorization": `Bearer ${token}`,
         },

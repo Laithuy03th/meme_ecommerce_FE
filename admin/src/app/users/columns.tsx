@@ -11,18 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { User } from "@/services/userApi";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-
-export type User = {
-  id: string;
-  avatar: string;
-  fullName: string;
-  email: string;
-  status: "active" | "inactive";
-};
 
 export const columns: ColumnDef<User>[] = [
   {
@@ -44,25 +36,13 @@ export const columns: ColumnDef<User>[] = [
     ),
   },
   {
-    accessorKey: "avatar",
-    header: "Avatar",
-    cell: ({ row }) => {
-      const user = row.original;
-      return (
-        <div className="w-9 h-9 relative">
-          <Image
-            src={user.avatar}
-            alt={user.fullName}
-            fill
-            className="rounded-full object-cover"
-          />
-        </div>
-      );
-    },
+    accessorKey: "id",
+    header: "ID",
   },
   {
     accessorKey: "fullName",
-    header: "User",
+    header: "Full Name",
+    cell: ({ row }) => row.getValue("fullName") || "N/A",
   },
   {
     accessorKey: "email",
@@ -79,20 +59,34 @@ export const columns: ColumnDef<User>[] = [
     },
   },
   {
+    accessorKey: "phone",
+    header: "Phone",
+    cell: ({ row }) => row.getValue("phone") || "N/A",
+  },
+  {
+    accessorKey: "roles",
+    header: "Roles",
+    cell: ({ row }) => {
+      const roles = row.getValue("roles") as string[];
+      return <div className="flex gap-1">{roles.join(", ")}</div>;
+    },
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status");
+      const status = row.getValue("status") as string;
 
       return (
         <div
           className={cn(
-            `p-1 rounded-md w-max text-xs`,
-            status === "active" && "bg-green-500/40",
-            status === "inactive" && "bg-red-500/40"
+            `p-1 rounded-md w-max text-xs font-medium`,
+            status === "ACTIVE" && "bg-green-100 text-green-700",
+            status === "INACTIVE" && "bg-red-100 text-red-700",
+            status === "LOCKED" && "bg-gray-100 text-gray-700"
           )}
         >
-          {status as string}
+          {status}
         </div>
       );
     },
@@ -113,13 +107,13 @@ export const columns: ColumnDef<User>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(user.id)}
+              onClick={() => navigator.clipboard.writeText(user.id.toString())}
             >
               Copy user ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <Link href={`/users/${user.id}`}>View customer</Link>
+              <Link href={`/users/${user.id}`}>View details</Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

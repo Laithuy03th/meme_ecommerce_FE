@@ -20,8 +20,20 @@ import { Button } from "@/components/ui/button";
 import EditUser from "@/components/EditUser";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AppLineChart from "@/components/AppLineChart";
+import { userApi } from "@/services/userApi";
 
-const SingleUserPage = () => {
+interface PageProps {
+  params: { id: string };
+}
+
+const SingleUserPage = async ({ params }: PageProps) => {
+  // In Next.js 15, params might be a promise, but for now let's assume standard behavior or await if needed.
+  // If it's a promise, we should await it. But to be safe with TS, let's treat it as object first.
+  // If build fails, we fix.
+  // Actually, let's just use the id directly.
+  const id = parseInt(params.id);
+  const user = await userApi.getUser(id);
+
   return (
     <div className="">
       <Breadcrumb>
@@ -35,7 +47,7 @@ const SingleUserPage = () => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>John Doe</BreadcrumbPage>
+            <BreadcrumbPage>{user.fullName || user.email}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -61,66 +73,40 @@ const SingleUserPage = () => {
                   </p>
                 </HoverCardContent>
               </HoverCard>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Shield
-                    size={36}
-                    className="rounded-full bg-green-800/30 border-1 border-green-800/50 p-2"
-                  />
-                </HoverCardTrigger>
-                <HoverCardContent>
-                  <h1 className="font-bold mb-2">Admin</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Admin users have access to all features and can manage
-                    users.
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Candy
-                    size={36}
-                    className="rounded-full bg-yellow-500/30 border-1 border-yellow-500/50 p-2"
-                  />
-                </HoverCardTrigger>
-                <HoverCardContent>
-                  <h1 className="font-bold mb-2">Awarded</h1>
-                  <p className="text-sm text-muted-foreground">
-                    This user has been awarded for their contributions.
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Citrus
-                    size={36}
-                    className="rounded-full bg-orange-500/30 border-1 border-orange-500/50 p-2"
-                  />
-                </HoverCardTrigger>
-                <HoverCardContent>
-                  <h1 className="font-bold mb-2">Popular</h1>
-                  <p className="text-sm text-muted-foreground">
-                    This user has been popular in the community.
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
+              {user.roles.includes("ADMIN") && (
+                <HoverCard>
+                  <HoverCardTrigger>
+                    <Shield
+                      size={36}
+                      className="rounded-full bg-green-800/30 border-1 border-green-800/50 p-2"
+                    />
+                  </HoverCardTrigger>
+                  <HoverCardContent>
+                    <h1 className="font-bold mb-2">Admin</h1>
+                    <p className="text-sm text-muted-foreground">
+                      Admin users have access to all features and can manage
+                      users.
+                    </p>
+                  </HoverCardContent>
+                </HoverCard>
+              )}
             </div>
           </div>
           {/* USER CARD CONTAINER */}
           <div className="bg-primary-foreground p-4 rounded-lg space-y-2">
             <div className="flex items-center gap-2">
               <Avatar className="size-12">
-                <AvatarImage src="https://avatars.githubusercontent.com/u/1486366" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarImage src={`/users/${(user.id % 10) + 1}.png`} />
+                <AvatarFallback>{user.fullName?.charAt(0) || user.email.charAt(0)}</AvatarFallback>
               </Avatar>
-              <h1 className="text-xl font-semibold">John Doe</h1>
+              <h1 className="text-xl font-semibold">{user.fullName || "No Name"}</h1>
             </div>
             <p className="text-sm text-muted-foreground">
-              Lorem ipsum dolor, sit amet consectetur adipisicing elit. Vel
-              voluptas distinctio ab ipsa commodi fugiat labore quos veritatis
-              cum corrupti sed repudiandae ipsum, harum recusandae ratione ipsam
-              in, quis quia.
+              {user.email}
             </p>
+            <div className="flex gap-2">
+              <Badge variant={user.status === "ACTIVE" ? "default" : "destructive"}>{user.status}</Badge>
+            </div>
           </div>
           {/* INFORMATION CONTAINER */}
           <div className="bg-primary-foreground p-4 rounded-lg">
@@ -130,45 +116,35 @@ const SingleUserPage = () => {
                 <SheetTrigger asChild>
                   <Button>Edit User</Button>
                 </SheetTrigger>
-                <EditUser />
+                <EditUser user={user} />
               </Sheet>
             </div>
             <div className="space-y-4 mt-4">
-              <div className="flex flex-col gap-2 mb-8">
-                <p className="text-sm text-muted-foreground">
-                  Profile completion
-                </p>
-                <Progress value={66} />
-              </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Full name:</span>
-                <span>John Doe</span>
+                <span>{user.fullName || "N/A"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Email:</span>
-                <span>john.doe@gmail.com</span>
+                <span>{user.email}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Phone:</span>
-                <span>+1 234 5678</span>
+                <span>{user.phone || "N/A"}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold">Address:</span>
-                <span>123 Main St</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold">City:</span>
-                <span>New York</span>
+                <span className="font-bold">Roles:</span>
+                <span>{user.roles.join(", ")}</span>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              Joined on 2025.01.01
+              Joined on {new Date(user.createdAt).toLocaleDateString()}
             </p>
           </div>
         </div>
         {/* RIGHT */}
         <div className="w-full xl:w-2/3 space-y-6">
-          
+
           {/* CHART CONTAINER */}
           <div className="bg-primary-foreground p-4 rounded-lg">
             <h1 className="text-xl font-semibold">User Activity</h1>

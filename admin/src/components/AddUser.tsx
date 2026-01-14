@@ -19,14 +19,10 @@ import {
   FormMessage,
 } from "./ui/form";
 import { Input } from "./ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "./ui/button";
+import { createUserAction } from "@/actions/userActions";
+import { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
   fullName: z
@@ -35,21 +31,47 @@ const formSchema = z.object({
     .max(50),
   email: z.string().email({ message: "Invalid email address!" }),
   phone: z.string().min(10).max(15),
-  address: z.string().min(2),
-  city: z.string().min(2),
+  password: z.string().min(6, { message: "Password must be at least 6 characters!" }),
+  roles: z.array(z.string()).min(1, { message: "Select at least one role!" }),
 });
 
 const AddUser = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      phone: "",
+      password: "",
+      roles: ["CUSTOMER"],
+    },
   });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
+    try {
+      const res = await createUserAction(values);
+      if (res.success) {
+        alert("User created successfully");
+        form.reset();
+      } else {
+        throw new Error(res.message);
+      }
+    } catch (error: any) {
+      alert(error.message || "Failed to create user");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <SheetContent>
+    <SheetContent className="overflow-y-auto">
       <SheetHeader>
         <SheetTitle className="mb-4">Add User</SheetTitle>
         <SheetDescription asChild>
           <Form {...form}>
-            <form className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField
                 control={form.control}
                 name="fullName"
@@ -57,11 +79,8 @@ const AddUser = () => {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} placeholder="John Doe" />
                     </FormControl>
-                    <FormDescription>
-                      Enter user full name.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -73,11 +92,8 @@ const AddUser = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} placeholder="john@example.com" />
                     </FormControl>
-                    <FormDescription>
-                      Only admin can see your email.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -89,48 +105,76 @@ const AddUser = () => {
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} placeholder="+1234567890" />
                     </FormControl>
-                    <FormDescription>
-                      Only admin can see your phone number (optional)
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
-                name="address"
+                name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address</FormLabel>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} type="password" placeholder="******" />
                     </FormControl>
-                    <FormDescription>
-                      Enter user address (optional)
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
-                name="city"
-                render={({ field }) => (
+                name="roles"
+                render={() => (
                   <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Enter user city (optional)
-                    </FormDescription>
+                    <div className="mb-4">
+                      <FormLabel className="text-base">Roles</FormLabel>
+                      <FormDescription>
+                        Select the roles for this user.
+                      </FormDescription>
+                    </div>
+                    {["ADMIN", "CUSTOMER"].map((role) => (
+                      <FormField
+                        key={role}
+                        control={form.control}
+                        name="roles"
+                        render={({ field }) => {
+                          return (
+                            <FormItem
+                              key={role}
+                              className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value?.includes(role)}
+                                  onCheckedChange={(checked) => {
+                                    return checked
+                                      ? field.onChange([...field.value, role])
+                                      : field.onChange(
+                                        field.value?.filter(
+                                          (value) => value !== role
+                                        )
+                                      )
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                {role}
+                              </FormLabel>
+                            </FormItem>
+                          )
+                        }}
+                      />
+                    ))}
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit">Submit</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create User"}
+              </Button>
             </form>
           </Form>
         </SheetDescription>

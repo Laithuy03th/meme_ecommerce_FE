@@ -1,15 +1,21 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
+import { voucherApi } from "@/services/voucherApi";
+import { handleApiError } from "@/lib/error-handler";
+import type { Voucher, CreateVoucherRequest } from "@/types/voucher";
+import type { PageResponse } from "@/types/common";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,229 +25,519 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Tag, Edit2, Trash2 } from "lucide-react";
-import { useState } from "react";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2, Plus, Pencil, Trash2, Tag, Percent, DollarSign, Calendar, TrendingUp } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
-// Mock vouchers data
-const vouchers = [
-    {
-        id: 1,
-        code: "SUMMER2024",
-        discountType: "PERCENT",
-        discountValue: 20,
-        minOrderAmount: 50,
-        maxDiscountAmount: 100,
-        usageLimit: 1000,
-        usedCount: 234,
-        startDate: "2024-06-01",
-        endDate: "2024-08-31",
-        isActive: true,
-    },
-    {
-        id: 2,
-        code: "WELCOME10",
-        discountType: "AMOUNT",
-        discountValue: 10,
-        minOrderAmount: 30,
-        maxDiscountAmount: null,
-        usageLimit: 500,
-        usedCount: 89,
-        startDate: "2024-01-01",
-        endDate: "2024-12-31",
-        isActive: true,
-    },
-    {
-        id: 3,
-        code: "FLASH50",
-        discountType: "PERCENT",
-        discountValue: 50,
-        minOrderAmount: 100,
-        maxDiscountAmount: 200,
-        usageLimit: 100,
-        usedCount: 100,
-        startDate: "2024-01-10",
-        endDate: "2024-01-15",
-        isActive: false,
-    },
-];
+export default function VouchersPage() {
+    const [vouchers, setVouchers] = useState<PageResponse<Voucher> | null>(null);
+    const [page, setPage] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-const VouchersPage = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    // Form state
+    const [formData, setFormData] = useState<CreateVoucherRequest>({
+        code: "",
+        discountType: "PERCENT",
+        discountValue: 0,
+        minOrderAmount: 0,
+        maxDiscountAmount: 0,
+        startDate: new Date().toISOString().slice(0, 16),
+        endDate: new Date().toISOString().slice(0, 16),
+        usageLimit: 1,
+    });
+
+    useEffect(() => {
+        loadVouchers();
+    }, [page]);
+
+    const loadVouchers = async () => {
+        try {
+            setLoading(true);
+            const data = await voucherApi.list({ page, size: 20 });
+            setVouchers(data);
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        if (!confirm("Bạn có chắc muốn xóa voucher này?")) return;
+
+        try {
+            await voucherApi.delete(id);
+            toast.success("Xóa voucher thành công");
+            loadVouchers();
+        } catch (error) {
+            handleApiError(error);
+        }
+    };
+
+    const openCreateDialog = () => {
+        setEditingVoucher(null);
+        setFormData({
+            code: "",
+            discountType: "PERCENT",
+            discountValue: 0,
+            minOrderAmount: 0,
+            maxDiscountAmount: 0,
+            startDate: new Date().toISOString().slice(0, 16),
+            endDate: new Date().toISOString().slice(0, 16),
+            usageLimit: 1,
+        });
+        setIsDialogOpen(true);
+    };
+
+    const openEditDialog = (voucher: Voucher) => {
+        setEditingVoucher(voucher);
+        setFormData({
+            code: voucher.code,
+            discountType: voucher.discountType,
+            discountValue: voucher.discountValue,
+            minOrderAmount: voucher.minOrderAmount || 0,
+            maxDiscountAmount: voucher.maxDiscountAmount || 0,
+            startDate: voucher.startDate.slice(0, 16),
+            endDate: voucher.endDate.slice(0, 16),
+            usageLimit: voucher.usageLimit,
+        });
+        setIsDialogOpen(true);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Validation
+        const errors: string[] = [];
+
+        if (formData.startDate && formData.endDate) {
+            const start = new Date(formData.startDate);
+            const end = new Date(formData.endDate);
+
+            if (start >= end) {
+                errors.push('Ngày bắt đầu phải trước ngày kết thúc');
+            }
+
+            if (end < new Date()) {
+                errors.push('Ngày kết thúc không được ở quá khứ');
+            }
+        }
+
+        if (formData.discountType === 'PERCENT' && formData.discountValue > 100) {
+            errors.push('Giảm % không được quá 100');
+        }
+
+        if (errors.length > 0) {
+            toast.error(errors.join('. '));
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            // Convert datetime-local format to ISO 8601 for backend
+            const payload: CreateVoucherRequest = {
+                code: formData.code,
+                discountType: formData.discountType,
+                discountValue: formData.discountValue,
+                minOrderAmount: formData.minOrderAmount && formData.minOrderAmount > 0
+                    ? formData.minOrderAmount
+                    : undefined,
+                maxDiscountAmount: formData.maxDiscountAmount && formData.maxDiscountAmount > 0
+                    ? formData.maxDiscountAmount
+                    : undefined,
+                startDate: formData.startDate
+                    ? new Date(formData.startDate).toISOString()
+                    : undefined,
+                endDate: formData.endDate
+                    ? new Date(formData.endDate).toISOString()
+                    : undefined,
+                usageLimit: formData.usageLimit,
+            };
+
+            if (editingVoucher) {
+                await voucherApi.update(editingVoucher.id, payload);
+                toast.success("Cập nhật voucher thành công");
+            } else {
+                await voucherApi.create(payload);
+                toast.success("Tạo voucher thành công");
+            }
+            setIsDialogOpen(false);
+            loadVouchers();
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const getStatusBadge = (voucher: Voucher) => {
+        const now = new Date();
+        const start = new Date(voucher.startDate);
+        const end = new Date(voucher.endDate);
+
+        if (!voucher.isActive) {
+            return <Badge variant="secondary">Inactive</Badge>;
+        }
+        if (now < start) {
+            return <Badge className="bg-blue-500">Scheduled</Badge>;
+        }
+        if (now > end) {
+            return <Badge variant="destructive">Expired</Badge>;
+        }
+        if (voucher.usedCount >= voucher.usageLimit) {
+            return <Badge variant="outline" className="border-orange-500 text-orange-600">Limit Reached</Badge>;
+        }
+        return <Badge className="bg-green-500">Active</Badge>;
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">
-                        Vouchers & Promotions
-                    </h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Vouchers Management</h1>
                     <p className="text-muted-foreground mt-1">
-                        Manage discount codes and campaigns
+                        Create and manage discount codes & promotions
                     </p>
                 </div>
-                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            Create Voucher
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>Create New Voucher</DialogTitle>
-                        </DialogHeader>
-                        <form className="space-y-4">
+                <Button onClick={openCreateDialog} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Create Voucher
+                </Button>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Vouchers</CardTitle>
+                        <Tag className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{vouchers?.totalElements || 0}</div>
+                        <p className="text-xs text-muted-foreground mt-1">All time</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Now</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-emerald-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-emerald-600">
+                            {vouchers?.content.filter((v) => {
+                                const now = new Date();
+                                return v.isActive && new Date(v.startDate) <= now && new Date(v.endDate) >= now;
+                            }).length || 0}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Currently running</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Usage</CardTitle>
+                        <DollarSign className="h-4 w-4 text-blue-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-blue-600">
+                            {vouchers?.content.reduce((sum, v) => sum + v.usedCount, 0) || 0}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Times redeemed</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Avg. Usage Rate</CardTitle>
+                        <Percent className="h-4 w-4 text-purple-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-purple-600">
+                            {vouchers?.content.length
+                                ? Math.round(
+                                    (vouchers.content.reduce((sum, v) => sum + (v.usedCount / v.usageLimit) * 100, 0) /
+                                        vouchers.content.length)
+                                )
+                                : 0}%
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Redemption rate</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Vouchers Table */}
+            <Card>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Code</TableHead>
+                                <TableHead>Discount</TableHead>
+                                <TableHead>Conditions</TableHead>
+                                <TableHead>Usage</TableHead>
+                                <TableHead>Valid Period</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {vouchers?.content.map((voucher) => (
+                                <TableRow key={voucher.id}>
+                                    <TableCell className="font-mono font-bold">{voucher.code}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            {voucher.discountType === 'PERCENT' ? (
+                                                <Percent className="w-4 h-4 text-orange-500" />
+                                            ) : (
+                                                <DollarSign className="w-4 h-4 text-green-500" />
+                                            )}
+                                            <span className="font-semibold">
+                                                {voucher.discountType === 'PERCENT'
+                                                    ? `${voucher.discountValue}%`
+                                                    : `${voucher.discountValue.toLocaleString()}đ`}
+                                            </span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-sm">
+                                        <div className="space-y-1">
+                                            {voucher.minOrderAmount && voucher.minOrderAmount > 0 && (
+                                                <div className="text-muted-foreground">
+                                                    Min: {voucher.minOrderAmount.toLocaleString()}đ
+                                                </div>
+                                            )}
+                                            {voucher.maxDiscountAmount && voucher.maxDiscountAmount > 0 && (
+                                                <div className="text-muted-foreground">
+                                                    Max: {voucher.maxDiscountAmount.toLocaleString()}đ
+                                                </div>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">{voucher.usedCount}</span>
+                                            <span className="text-muted-foreground">/</span>
+                                            <span className="text-muted-foreground">{voucher.usageLimit}</span>
+                                        </div>
+                                        <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                                            <div
+                                                className="bg-primary h-1.5 rounded-full transition-all"
+                                                style={{ width: `${Math.min((voucher.usedCount / voucher.usageLimit) * 100, 100)}%` }}
+                                            />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-sm">
+                                        <div className="flex items-center gap-1 text-muted-foreground">
+                                            <Calendar className="w-3 h-3" />
+                                            {format(new Date(voucher.startDate), 'dd/MM/yy')}
+                                        </div>
+                                        <div className="flex items-center gap-1 text-muted-foreground">
+                                            <Calendar className="w-3 h-3" />
+                                            {format(new Date(voucher.endDate), 'dd/MM/yy')}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{getStatusBadge(voucher)}</TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(voucher)}>
+                                                <Pencil className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleDelete(voucher.id)}
+                                            >
+                                                <Trash2 className="w-4 h-4 text-destructive" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {(!vouchers?.content || vouchers.content.length === 0) && (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center h-32 text-muted-foreground">
+                                        No vouchers found. Create your first voucher!
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+
+                    {/* Pagination */}
+                    {vouchers && vouchers.totalPages > 1 && (
+                        <div className="flex items-center justify-between p-4 border-t">
+                            <p className="text-sm text-muted-foreground">
+                                Page {page + 1} of {vouchers.totalPages} ({vouchers.totalElements} total)
+                            </p>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={page === 0}
+                                    onClick={() => setPage(page - 1)}
+                                >
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={page >= vouchers.totalPages - 1}
+                                    onClick={() => setPage(page + 1)}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Create/Edit Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{editingVoucher ? "Edit Voucher" : "Create New Voucher"}</DialogTitle>
+                        <DialogDescription>
+                            {editingVoucher
+                                ? "Update the voucher details below."
+                                : "Fill in the details to create a new discount voucher."}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit}>
+                        <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="col-span-2">
-                                    <Label>Voucher Code</Label>
-                                    <Input placeholder="SUMMER2024" />
+                                <div className="space-y-2">
+                                    <Label htmlFor="code">Voucher Code *</Label>
+                                    <Input
+                                        id="code"
+                                        placeholder="e.g., SALE50"
+                                        value={formData.code}
+                                        onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                                        required
+                                        className="font-mono"
+                                    />
                                 </div>
-                                <div>
-                                    <Label>Discount Type</Label>
-                                    <Select>
+                                <div className="space-y-2">
+                                    <Label htmlFor="discountType">Discount Type *</Label>
+                                    <Select
+                                        value={formData.discountType}
+                                        onValueChange={(value: "PERCENT" | "AMOUNT") =>
+                                            setFormData({ ...formData, discountType: value })
+                                        }
+                                    >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select type" />
+                                            <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="PERCENT">Percentage</SelectItem>
-                                            <SelectItem value="AMOUNT">Fixed Amount</SelectItem>
+                                            <SelectItem value="PERCENT">Percentage (%)</SelectItem>
+                                            <SelectItem value="AMOUNT">Fixed Amount (đ)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div>
-                                    <Label>Discount Value</Label>
-                                    <Input type="number" placeholder="20" />
-                                </div>
-                                <div>
-                                    <Label>Min Order Amount</Label>
-                                    <Input type="number" placeholder="50" />
-                                </div>
-                                <div>
-                                    <Label>Max Discount Amount</Label>
-                                    <Input type="number" placeholder="100" />
-                                </div>
-                                <div>
-                                    <Label>Usage Limit</Label>
-                                    <Input type="number" placeholder="1000" />
-                                </div>
-                                <div>
-                                    <Label>Start Date</Label>
-                                    <Input type="date" />
-                                </div>
-                                <div>
-                                    <Label>End Date</Label>
-                                    <Input type="date" />
-                                </div>
-                            </div>
-                            <div className="flex gap-3 pt-4">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="flex-1"
-                                    onClick={() => setIsModalOpen(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" className="flex-1">
-                                    Create Voucher
-                                </Button>
-                            </div>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-            </div>
-
-            {/* Vouchers Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {vouchers.map((voucher) => (
-                    <Card key={voucher.id}>
-                        <CardHeader>
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                                        <Tag className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-lg">{voucher.code}</CardTitle>
-                                        <Badge
-                                            className={
-                                                voucher.isActive
-                                                    ? "bg-emerald-100 text-emerald-700 mt-1"
-                                                    : "bg-gray-100 text-gray-700 mt-1"
-                                            }
-                                        >
-                                            {voucher.isActive ? "Active" : "Inactive"}
-                                        </Badge>
-                                    </div>
-                                </div>
-                                <div className="flex gap-1">
-                                    <Button variant="ghost" size="icon">
-                                        <Edit2 className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon">
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            <div className="flex items-center justify-between p-3 bg-primary/5 rounded-xl">
-                                <span className="text-sm text-muted-foreground">Discount</span>
-                                <span className="font-bold text-primary">
-                                    {voucher.discountType === "PERCENT"
-                                        ? `${voucher.discountValue}%`
-                                        : `$${voucher.discountValue}`}
-                                </span>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div>
-                                    <p className="text-muted-foreground">Min Order</p>
-                                    <p className="font-semibold">${voucher.minOrderAmount}</p>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="discountValue">
+                                        Discount Value * {formData.discountType === "PERCENT" ? "(%)" : "(đ)"}
+                                    </Label>
+                                    <Input
+                                        id="discountValue"
+                                        type="number"
+                                        min="0"
+                                        value={formData.discountValue}
+                                        onChange={(e) => setFormData({ ...formData, discountValue: Number(e.target.value) })}
+                                        required
+                                    />
                                 </div>
-                                <div>
-                                    <p className="text-muted-foreground">Max Discount</p>
-                                    <p className="font-semibold">
-                                        {voucher.maxDiscountAmount
-                                            ? `$${voucher.maxDiscountAmount}`
-                                            : "No limit"}
-                                    </p>
+                                <div className="space-y-2">
+                                    <Label htmlFor="minOrderAmount">Min Order (đ)</Label>
+                                    <Input
+                                        id="minOrderAmount"
+                                        type="number"
+                                        min="0"
+                                        value={formData.minOrderAmount}
+                                        onChange={(e) => setFormData({ ...formData, minOrderAmount: Number(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="maxDiscountAmount">Max Discount (đ)</Label>
+                                    <Input
+                                        id="maxDiscountAmount"
+                                        type="number"
+                                        min="0"
+                                        value={formData.maxDiscountAmount}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, maxDiscountAmount: Number(e.target.value) })
+                                        }
+                                    />
                                 </div>
                             </div>
 
-                            <div className="pt-3 border-t">
-                                <div className="flex justify-between text-sm mb-2">
-                                    <span className="text-muted-foreground">Usage</span>
-                                    <span className="font-semibold">
-                                        {voucher.usedCount} / {voucher.usageLimit}
-                                    </span>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="usageLimit">Usage Limit *</Label>
+                                    <Input
+                                        id="usageLimit"
+                                        type="number"
+                                        min="1"
+                                        value={formData.usageLimit}
+                                        onChange={(e) => setFormData({ ...formData, usageLimit: Number(e.target.value) })}
+                                        required
+                                    />
                                 </div>
-                                <div className="w-full bg-muted rounded-full h-2">
-                                    <div
-                                        className="bg-primary h-2 rounded-full transition-all"
-                                        style={{
-                                            width: `${(voucher.usedCount / voucher.usageLimit) * 100
-                                                }%`,
-                                        }}
-                                    ></div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="startDate">Start Date *</Label>
+                                    <Input
+                                        id="startDate"
+                                        type="datetime-local"
+                                        value={formData.startDate}
+                                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="endDate">End Date *</Label>
+                                    <Input
+                                        id="endDate"
+                                        type="datetime-local"
+                                        value={formData.endDate}
+                                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                                        required
+                                    />
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground pt-2">
-                                <div>
-                                    <p>Start: {voucher.startDate}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p>End: {voucher.endDate}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {editingVoucher ? "Update Voucher" : "Create Voucher"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
-};
-
-export default VouchersPage;
+}

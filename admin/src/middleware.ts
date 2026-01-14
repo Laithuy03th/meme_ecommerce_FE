@@ -1,0 +1,41 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+export function middleware(request: NextRequest) {
+    const token = request.cookies.get("adminAccessToken")?.value;
+    const { pathname } = request.nextUrl;
+
+    // Define public paths
+    const publicPaths = ["/login", "/favicon.ico"];
+
+    // Check if the path is public
+    if (publicPaths.some((path) => pathname.startsWith(path))) {
+        // If user is already logged in and tries to access login, redirect to dashboard
+        if (token && pathname === "/login") {
+            return NextResponse.redirect(new URL("/", request.url));
+        }
+        return NextResponse.next();
+    }
+
+    // NOTE: Auth is now handled client-side via AdminGuard and localStorage to avoid cookie conflicts.
+    // Middleware check for 'adminAccessToken' is disabled.
+
+    // if (!token) {
+    //     return NextResponse.redirect(new URL("/login", request.url));
+    // }
+
+    return NextResponse.next();
+}
+
+export const config = {
+    matcher: [
+        /*
+         * Match all request paths except for the ones starting with:
+         * - api (API routes)
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         */
+        "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    ],
+};

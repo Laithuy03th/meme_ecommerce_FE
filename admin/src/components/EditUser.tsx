@@ -27,36 +27,83 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "./ui/button";
+import { User } from "@/services/userApi";
+import { updatePasswordAction, updateRolesAction, updateStatusAction } from "@/actions/userActions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useState } from "react";
 
 const formSchema = z.object({
-  fullName: z
-    .string()
-    .min(2, { message: "Full name must be at least 2 characters!" })
-    .max(50),
-  email: z.string().email({ message: "Invalid email address!" }),
-  phone: z.string().min(10).max(15),
-  address: z.string().min(2),
-  city: z.string().min(2),
+  fullName: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  status: z.enum(["ACTIVE", "INACTIVE", "LOCKED"]),
+  roles: z.array(z.string()).min(1),
+  password: z.string().min(6).optional().or(z.literal("")),
 });
 
-const EditUser = () => {
+interface EditUserProps {
+  user: User;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+const EditUser = ({ user }: EditUserProps) => {
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: "John Doe",
-      email: "john.doe@gmail.com",
-      phone: "+1 234 5678",
-      address: "123 Main St",
-      city: "New York",
+      fullName: user.fullName || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      status: user.status as any,
+      roles: user.roles,
+      password: "",
     },
   });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
+    try {
+      // Update Status
+      if (values.status !== user.status) {
+        const res = await updateStatusAction(user.id, values.status);
+        if (!res.success) throw new Error(res.message);
+      }
+
+      // Update Roles
+      // Simple array comparison
+      const sortedCurrentRoles = [...user.roles].sort();
+      const sortedNewRoles = [...values.roles].sort();
+      if (JSON.stringify(sortedCurrentRoles) !== JSON.stringify(sortedNewRoles)) {
+        const res = await updateRolesAction(user.id, values.roles);
+        if (!res.success) throw new Error(res.message);
+      }
+
+      // Update Password
+      if (values.password && values.password.length >= 6) {
+        const res = await updatePasswordAction(user.id, values.password);
+        if (!res.success) throw new Error(res.message);
+      }
+
+      // toast.success("User updated successfully");
+      alert("User updated successfully"); // Fallback if no toast provider
+    } catch (error: any) {
+      // toast.error(error.message || "Failed to update user");
+      alert(error.message || "Failed to update user");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <SheetContent>
+    <SheetContent className="overflow-y-auto">
       <SheetHeader>
         <SheetTitle className="mb-4">Edit User</SheetTitle>
         <SheetDescription asChild>
           <Form {...form}>
-            <form className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* READ ONLY FIELDS */}
               <FormField
                 control={form.control}
                 name="fullName"
@@ -64,11 +111,8 @@ const EditUser = () => {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} disabled />
                     </FormControl>
-                    <FormDescription>
-                      Enter user full name.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -80,11 +124,8 @@ const EditUser = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} disabled />
                     </FormControl>
-                    <FormDescription>
-                      Only admin can see your email.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -96,48 +137,106 @@ const EditUser = () => {
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} disabled />
                     </FormControl>
-                    <FormDescription>
-                      Only admin can see your phone number (optional)
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* EDITABLE FIELDS */}
               <FormField
                 control={form.control}
-                name="address"
+                name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Enter user address (optional)
-                    </FormDescription>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">Active</SelectItem>
+                        <SelectItem value="INACTIVE">Inactive</SelectItem>
+                        <SelectItem value="LOCKED">Locked</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
-                name="city"
+                name="roles"
+                render={() => (
+                  <FormItem>
+                    <div className="mb-4">
+                      <FormLabel className="text-base">Roles</FormLabel>
+                      <FormDescription>
+                        Select the roles for this user.
+                      </FormDescription>
+                    </div>
+                    {["ADMIN", "CUSTOMER"].map((role) => (
+                      <FormField
+                        key={role}
+                        control={form.control}
+                        name="roles"
+                        render={({ field }) => {
+                          return (
+                            <FormItem
+                              key={role}
+                              className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value?.includes(role)}
+                                  onCheckedChange={(checked) => {
+                                    return checked
+                                      ? field.onChange([...field.value, role])
+                                      : field.onChange(
+                                        field.value?.filter(
+                                          (value) => value !== role
+                                        )
+                                      )
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                {role}
+                              </FormLabel>
+                            </FormItem>
+                          )
+                        }}
+                      />
+                    ))}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>City</FormLabel>
+                    <FormLabel>New Password (Optional)</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} type="password" placeholder="Leave empty to keep current" />
                     </FormControl>
                     <FormDescription>
-                      Enter user city (optional)
+                      Enter a new password to reset it.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit">Submit</Button>
+
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Changes"}
+              </Button>
             </form>
           </Form>
         </SheetDescription>

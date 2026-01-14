@@ -1,329 +1,370 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { orderApi } from "@/services/orderApi";
+import { handleApiError } from "@/lib/error-handler";
+import type { OrderDetail, OrderStatus } from "@/types/order";
+import { ORDER_STATUS_TRANSITIONS } from "@/types/order";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import {
-    ArrowLeft,
-    Package,
-    MapPin,
-    CreditCard,
-    User,
-    CheckCircle2,
-    Clock,
-    Truck,
-    Home as HomeIcon,
-} from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Package, MapPin, CreditCard, User, ArrowLeft } from "lucide-react";
+import { format } from "date-fns";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-const OrderDetailPage = ({ params }: { params: { id: string } }) => {
-    const [orderStatus, setOrderStatus] = useState("PENDING");
+export default function OrderDetailPage({ params }: { params: { id: string } }) {
+    const [order, setOrder] = useState<OrderDetail | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [updating, setUpdating] = useState(false);
+    const router = useRouter();
 
-    // Mock order data
-    const order = {
-        id: "ORD-001",
-        customer: {
-            name: "John Doe",
-            email: "john@example.com",
-            phone: "+1 234 567 890",
-        },
-        shipping: {
-            fullName: "John Doe",
-            phone: "+1 234 567 890",
-            addressLine1: "123 Main Street, Apt 4B",
-            ward: "Ward 1",
-            district: "District 1",
-            province: "New York",
-            country: "United States",
-        },
-        payment: {
-            method: "COD",
-            status: "UNPAID",
-            total: 120.0,
-            subtotal: 110.0,
-            shippingFee: 10.0,
-        },
-        items: [
-            {
-                id: 1,
-                productName: "Wireless Headphones",
-                sku: "WH-001",
-                color: "Black",
-                size: "",
-                quantity: 2,
-                unitPrice: 50.0,
-                totalPrice: 100.0,
-            },
-            {
-                id: 2,
-                productName: "Cotton T-Shirt",
-                sku: "TS-003",
-                color: "White",
-                size: "M",
-                quantity: 1,
-                unitPrice: 10.0,
-                totalPrice: 10.0,
-            },
-        ],
-        timeline: [
-            {
-                status: "Order Placed",
-                date: "2024-01-15 10:30 AM",
-                completed: true,
-            },
-            {
-                status: "Payment Confirmed",
-                date: "2024-01-15 10:31 AM",
-                completed: true,
-            },
-            { status: "Processing", date: null, completed: false },
-            { status: "Shipped", date: null, completed: false },
-            { status: "Delivered", date: null, completed: false },
-        ],
-        createdAt: "2024-01-15 10:30 AM",
+    useEffect(() => {
+        loadOrder();
+    }, []);
+
+    const loadOrder = async () => {
+        try {
+            setLoading(true);
+            const data = await orderApi.getById(parseInt(params.id));
+            setOrder(data);
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const statusOptions = ["PENDING", "PAID", "SHIPPED", "COMPLETED", "CANCELED"];
+    const handleStatusChange = async (newStatus: OrderStatus) => {
+        if (!order) return;
 
-    const getStatusIcon = (completed: boolean) => {
-        if (completed) return CheckCircle2;
-        return Clock;
+        let confirmMessage = `Xác nhận chuyển trạng thái đến "${newStatus}"?`;
+
+        // Custom confirmation messages based on Backend logic
+        if (newStatus === 'CANCELED') {
+            confirmMessage = "Hủy đơn hàng? Hành động này sẽ cộng lại số lượng sản phẩm vào kho. Bạn có chắc chắn không?";
+        } else if (newStatus === 'RETURNED') {
+            if (order.status === 'SHIPPED') {
+                confirmMessage = "Khách không nhận hàng? Hàng sẽ được nhập lại kho. Tiếp tục?";
+            } else {
+                confirmMessage = "Đồng ý nhận lại hàng? Hành động này sẽ cộng lại số lượng sản phẩm vào kho. Bạn có chắc chắn không?";
+            }
+        }
+
+        if (!confirm(confirmMessage)) return;
+
+        try {
+            setUpdating(true);
+            await orderApi.updateStatus(order.id, newStatus);
+            alert("Cập nhật trạng thái thành công");
+            loadOrder();
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setUpdating(false);
+        }
     };
+
+    const renderActionButtons = () => {
+        if (!order) return null;
+
+        const buttons = [];
+
+        switch (order.status) {
+            case 'PENDING':
+                buttons.push(
+                    <Button key="confirm" onClick={() => handleStatusChange('CONFIRMED')} disabled={updating} className="bg-blue-600 hover:bg-blue-700">
+                        Xác nhận
+                    </Button>,
+                    <Button key="cancel" onClick={() => handleStatusChange('CANCELED')} disabled={updating} variant="destructive">
+                        Hủy đơn
+                    </Button>
+                );
+                break;
+            case 'CONFIRMED':
+                buttons.push(
+                    <Button key="pack" onClick={() => handleStatusChange('PACKED')} disabled={updating} className="bg-purple-600 hover:bg-purple-700">
+                        Đóng gói
+                    </Button>,
+                    <Button key="cancel" onClick={() => handleStatusChange('CANCELED')} disabled={updating} variant="destructive">
+                        Hủy đơn
+                    </Button>
+                );
+                break;
+            case 'PACKED':
+                buttons.push(
+                    <Button key="ship" onClick={() => handleStatusChange('SHIPPED')} disabled={updating} className="bg-cyan-600 hover:bg-cyan-700">
+                        Giao cho Shipper
+                    </Button>,
+                    <Button key="cancel" onClick={() => handleStatusChange('CANCELED')} disabled={updating} variant="destructive">
+                        Hủy đơn
+                    </Button>
+                );
+                break;
+            case 'SHIPPED':
+                buttons.push(
+                    <Button key="delivered" onClick={() => handleStatusChange('DELIVERED')} disabled={updating} className="bg-green-600 hover:bg-green-700 h-10 px-6 text-lg">
+                        Giao thành công
+                    </Button>,
+                    <Button key="return_req" onClick={() => handleStatusChange('RETURN_REQUESTED')} disabled={updating} className="bg-orange-500 hover:bg-orange-600">
+                        Khách trả hàng
+                    </Button>,
+                    <Button key="returned" onClick={() => handleStatusChange('RETURNED')} disabled={updating} className="bg-slate-700 hover:bg-slate-800">
+                        Giao thất bại / Hoàn về
+                    </Button>,
+                    <Button key="cancel" onClick={() => handleStatusChange('CANCELED')} disabled={updating} variant="destructive">
+                        Hủy giao
+                    </Button>
+                );
+                break;
+            case 'DELIVERED':
+                buttons.push(
+                    <Button key="return_req" onClick={() => handleStatusChange('RETURN_REQUESTED')} disabled={updating} className="bg-orange-500 hover:bg-orange-600">
+                        Tạo yêu cầu trả hàng
+                    </Button>,
+                    <Button key="refund" onClick={() => handleStatusChange('REFUNDED')} disabled={updating} className="bg-emerald-700 hover:bg-emerald-800">
+                        Hoàn tiền
+                    </Button>
+                );
+                break;
+            case 'RETURN_REQUESTED':
+                buttons.push(
+                    <Button key="returned" onClick={() => handleStatusChange('RETURNED')} disabled={updating} className="bg-green-600 hover:bg-green-700">
+                        ✅ Đồng ý nhận lại
+                    </Button>,
+                    <Button key="reject_return" onClick={() => handleStatusChange('DELIVERED')} disabled={updating} variant="destructive">
+                        ❌ Từ chối trả hàng
+                    </Button>
+                );
+                break;
+            case 'RETURNED':
+                buttons.push(
+                    <Button key="refund" onClick={() => handleStatusChange('REFUNDED')} disabled={updating} className="bg-emerald-700 hover:bg-emerald-800">
+                        Hoàn tiền cho khách
+                    </Button>
+                );
+                break;
+            default:
+                return <p className="text-muted-foreground italic">Order is in terminal state ({order.status}). No authorized actions.</p>;
+        }
+
+        return buttons;
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+        );
+    }
+
+    if (!order) {
+        return <div>Order not found</div>;
+    }
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Link href="/orders">
-                        <Button variant="outline" size="icon">
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                    </Link>
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">
-                            Order {order.id}
-                        </h1>
-                        <p className="text-muted-foreground mt-1">{order.createdAt}</p>
+            {/* Header with Timeline */}
+            <div className="flex flex-col gap-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <Link href="/orders">
+                            <Button variant="ghost" size="sm">
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                Back
+                            </Button>
+                        </Link>
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight">Order #{order.id}</h1>
+                            <p className="text-muted-foreground mt-1 text-sm flex items-center gap-2">
+                                Created {format(new Date(order.createdAt), 'PPpp')}
+                                {order.updatedAt && (
+                                    <>
+                                        <span>•</span>
+                                        <span>Last Updated: {format(new Date(order.updatedAt), 'PPpp')}</span>
+                                    </>
+                                )}
+                            </p>
+                        </div>
                     </div>
+                    <Badge className={`text-lg px-4 py-2 ${order.status === 'CANCELED' || order.status === 'RETURNED' ? 'bg-gray-500' :
+                        order.status === 'CONFIRMED' ? 'bg-blue-500' :
+                            order.status === 'SHIPPED' ? 'bg-cyan-600' :
+                                order.status === 'DELIVERED' ? 'bg-green-600' :
+                                    ''
+                        }`}>
+                        {order.status}
+                    </Badge>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Select value={orderStatus} onValueChange={setOrderStatus}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {statusOptions.map((status) => (
-                                <SelectItem key={status} value={status}>
-                                    {status}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Button>Update Status</Button>
-                </div>
+
+                {/* Timeline */}
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-4">
+                            {/* Process Steps */}
+                            {[
+                                { status: 'PENDING', label: 'Đặt hàng', icon: '📝' },
+                                { status: 'CONFIRMED', label: 'Xác nhận', icon: '✅' },
+                                { status: 'SHIPPED', label: 'Giao hàng', icon: '🚚' },
+                                { status: 'DELIVERED', label: 'Hoàn thành', icon: '🎉' }
+                            ].map((step, index, arr) => {
+                                const isCompleted = ['CONFIRMED', 'PACKED', 'SHIPPED', 'DELIVERED', 'RETURN_REQUESTED', 'RETURNED', 'REFUNDED'].includes(order.status) || (order.status === 'PENDING' && index === 0);
+                                // Handle Canceled/Returned logic for visual
+                                const isFailed = order.status === 'CANCELED' || (order.status === 'RETURNED' && step.status !== 'PENDING');
+
+                                return (
+                                    <div key={step.status} className="flex flex-col items-center relative z-10 bg-card px-2">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 mb-2 ${isFailed ? 'border-gray-400 bg-gray-100 text-gray-500' :
+                                            isCompleted ? 'border-primary bg-primary text-primary-foreground' : 'border-muted text-muted-foreground'
+                                            }`}>
+                                            {index + 1}
+                                        </div>
+                                        <span className={`font-semibold text-sm ${isFailed ? 'text-gray-500' : ''}`}>{step.label}</span>
+                                    </div>
+                                );
+                            })}
+
+                            {/* Connecting Line */}
+                            <div className="absolute top-4 left-0 w-full h-0.5 bg-muted -z-0 hidden md:block" />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* Main Content */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Order Items */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Package className="h-5 w-5" />
-                                Order Items
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {order.items.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg"
-                                >
-                                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                                        <Package className="h-8 w-8 text-muted-foreground" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-semibold">{item.productName}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            SKU: {item.sku}
-                                        </p>
-                                        {item.color && (
-                                            <p className="text-sm text-muted-foreground">
-                                                Color: {item.color}
-                                            </p>
-                                        )}
-                                        {item.size && (
-                                            <p className="text-sm text-muted-foreground">
-                                                Size: {item.size}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-semibold">
-                                            ${item.totalPrice.toFixed(2)}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Qty: {item.quantity}
-                                        </p>
-                                    </div>
+            {/* Action Bar */}
+            <Card className="border-t-4 border-t-primary shadow-md">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Xử lý đơn hàng</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-wrap gap-3">
+                        {renderActionButtons()}
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div className="grid gap-6 md:grid-cols-2">
+                {/* Customer Info */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <User className="w-4 h-4" />
+                            Customer Information
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Name</p>
+                            <p className="font-medium">{order.shippingFullName}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Email</p>
+                            <p className="font-medium">{order.userEmail}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Phone</p>
+                            <p className="font-medium">{order.shippingPhone}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Shipping Address */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            Shipping Address
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p>{order.shippingAddressLine1}</p>
+                        {order.shippingWard && <p>{order.shippingWard}</p>}
+                        {order.shippingDistrict && <p>{order.shippingDistrict}</p>}
+                        {order.shippingProvince && <p>{order.shippingProvince}</p>}
+                        {order.shippingCountry && <p>{order.shippingCountry}</p>}
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Payment Info */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <CreditCard className="w-4 h-4" />
+                        Payment Information
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-4 md:grid-cols-3">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Payment Method</p>
+                            <p className="font-medium">{order.paymentMethod}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Payment Status</p>
+                            <Badge>{order.paymentStatus}</Badge>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Total Amount</p>
+                            <p className="text-2xl font-bold">{order.totalAmount.toLocaleString()}đ</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Order Items */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Package className="w-4 h-4" />
+                        Order Items
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        {order.items.map((item) => (
+                            <div key={item.id} className="flex justify-between items-center border-b pb-4">
+                                <div>
+                                    <Link href={`/products/${item.productId}`} className="font-medium hover:underline text-primary">
+                                        {item.productName}
+                                    </Link>
+                                    <p className="text-sm text-muted-foreground">
+                                        {item.unitPrice.toLocaleString()}đ × {item.quantity}
+                                    </p>
                                 </div>
-                            ))}
-                        </CardContent>
-                    </Card>
-
-                    {/* Order Timeline */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Order Timeline</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {order.timeline.map((item, index) => {
-                                    const Icon = getStatusIcon(item.completed);
-                                    return (
-                                        <div key={index} className="flex gap-4">
-                                            <div className="flex flex-col items-center">
-                                                <div
-                                                    className={`w-8 h-8 rounded-full flex items-center justify-center ${item.completed
-                                                            ? "bg-primary text-primary-foreground"
-                                                            : "bg-muted text-muted-foreground"
-                                                        }`}
-                                                >
-                                                    <Icon className="h-4 w-4" />
-                                                </div>
-                                                {index < order.timeline.length - 1 && (
-                                                    <div
-                                                        className={`w-0.5 h-12 ${item.completed ? "bg-primary" : "bg-muted"
-                                                            }`}
-                                                    ></div>
-                                                )}
-                                            </div>
-                                            <div className="flex-1 pb-8">
-                                                <p
-                                                    className={`font-semibold ${item.completed
-                                                            ? "text-foreground"
-                                                            : "text-muted-foreground"
-                                                        }`}
-                                                >
-                                                    {item.status}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {item.date || "Pending"}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                <p className="font-semibold">{item.lineTotal.toLocaleString()}đ</p>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Sidebar */}
-                <div className="space-y-6">
-                    {/* Customer Info */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <User className="h-5 w-5" />
-                                Customer
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            <p className="font-semibold">{order.customer.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                                {order.customer.email}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                                {order.customer.phone}
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    {/* Shipping Address */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <MapPin className="h-5 w-5" />
-                                Shipping Address
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-1 text-sm">
-                            <p className="font-semibold">{order.shipping.fullName}</p>
-                            <p className="text-muted-foreground">
-                                {order.shipping.addressLine1}
-                            </p>
-                            <p className="text-muted-foreground">
-                                {order.shipping.ward}, {order.shipping.district}
-                            </p>
-                            <p className="text-muted-foreground">
-                                {order.shipping.province}, {order.shipping.country}
-                            </p>
-                            <Separator className="my-2" />
-                            <p className="text-muted-foreground">{order.shipping.phone}</p>
-                        </CardContent>
-                    </Card>
-
-                    {/* Payment Summary */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <CreditCard className="h-5 w-5" />
-                                Payment
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
+                        ))}
+                        <div className="space-y-2 pt-2">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Subtotal</span>
-                                <span className="font-semibold">
-                                    ${order.payment.subtotal.toFixed(2)}
-                                </span>
+                                <span>{(order.totalAmount - order.shippingFee).toLocaleString()}đ</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Shipping</span>
-                                <span className="font-semibold">
-                                    ${order.payment.shippingFee.toFixed(2)}
-                                </span>
+                                <span className="text-muted-foreground">Shipping Fee</span>
+                                <span>{order.shippingFee.toLocaleString()}đ</span>
                             </div>
-                            <Separator />
-                            <div className="flex justify-between">
-                                <span className="font-semibold">Total</span>
-                                <span className="font-bold text-primary">
-                                    ${order.payment.total.toFixed(2)}
-                                </span>
+                            <div className="flex justify-between text-lg font-bold border-t pt-2">
+                                <span>Total</span>
+                                <span>{order.totalAmount.toLocaleString()}đ</span>
                             </div>
-                            <Separator />
-                            <div>
-                                <p className="text-sm text-muted-foreground mb-2">
-                                    Method: {order.payment.method}
-                                </p>
-                                <Badge
-                                    className={
-                                        order.payment.status === "PAID"
-                                            ? "bg-emerald-100 text-emerald-700"
-                                            : "bg-red-100 text-red-700"
-                                    }
-                                >
-                                    {order.payment.status}
-                                </Badge>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {order.note && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Order Note</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">{order.note}</p>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
-};
-
-export default OrderDetailPage;
+}

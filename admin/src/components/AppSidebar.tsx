@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Home,
   Package,
@@ -40,6 +42,9 @@ import { Sheet, SheetTrigger } from "./ui/sheet";
 import AddProduct from "./AddProduct";
 import AddCategory from "./AddCategory";
 import AddUser from "./AddUser";
+import { logout } from "@/services/authApi";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const mainMenuItems = [
   {
@@ -94,7 +99,39 @@ const mainMenuItems = [
   },
 ];
 
-const AppSidebar = () => {
+const AppSidebar = ({ user }: { user: any }) => {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+
+      // Call API logout (clears refreshToken cookie)
+      await logout(token || undefined);
+
+      // Clear Client Storage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
+
+        // Clear Server Component Cookie
+        document.cookie = "accessToken=; path=/; max-age=0; SameSite=Lax";
+      }
+
+      toast.success("Đăng xuất thành công");
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout error", error);
+      // Force logout anyway
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
+        document.cookie = "accessToken=; path=/; max-age=0; SameSite=Lax";
+        window.location.href = "/login";
+      }
+    }
+  };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="py-4">
@@ -195,13 +232,25 @@ const AppSidebar = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
-                  <User2 /> Admin User <ChevronUp className="ml-auto" />
+                  <User2 /> {user?.fullName || user?.email || 'Admin User'} <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Account</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Sign out</DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="cursor-pointer flex items-center">
+                    <User2 className="mr-2 h-4 w-4" />
+                    <span>Account</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="cursor-pointer flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 cursor-pointer">
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

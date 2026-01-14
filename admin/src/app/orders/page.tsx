@@ -1,5 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { orderApi } from "@/services/orderApi";
+import { handleApiError } from "@/lib/error-handler";
+import type { OrderSummary, OrderStatus } from "@/types/order";
+import type { PageResponse } from "@/types/common";
+import { ORDER_STATUS_TRANSITIONS } from "@/types/order";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,90 +25,68 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Search, Eye, Filter } from "lucide-react";
+import { Search, Eye, Loader2, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { format } from "date-fns";
 
-// Mock orders data
-const orders = [
-    {
-        id: "ORD-001",
-        customer: "John Doe",
-        email: "john@example.com",
-        items: 3,
-        total: 120.00,
-        paymentStatus: "PAID",
-        paymentMethod: "COD",
-        orderStatus: "PENDING",
-        date: "2024-01-15 10:30",
-    },
-    {
-        id: "ORD-002",
-        customer: "Jane Smith",
-        email: "jane@example.com",
-        items: 1,
-        total: 85.50,
-        paymentStatus: "PAID",
-        paymentMethod: "VNPAY",
-        orderStatus: "SHIPPED",
-        date: "2024-01-15 09:15",
-    },
-    {
-        id: "ORD-003",
-        customer: "Mike Johnson",
-        email: "mike@example.com",
-        items: 2,
-        total: 299.99,
-        paymentStatus: "PAID",
-        paymentMethod: "Momo",
-        orderStatus: "COMPLETED",
-        date: "2024-01-14 16:20",
-    },
-    {
-        id: "ORD-004",
-        customer: "Sarah Williams",
-        email: "sarah@example.com",
-        items: 1,
-        total: 45.00,
-        paymentStatus: "UNPAID",
-        paymentMethod: "COD",
-        orderStatus: "PENDING",
-        date: "2024-01-14 14:15",
-    },
-];
+export default function OrdersPage() {
+    const [orders, setOrders] = useState<PageResponse<OrderSummary> | null>(null);
+    const [page, setPage] = useState(0);
+    const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
+    const [loading, setLoading] = useState(true);
 
-const OrdersPage = () => {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
+    useEffect(() => {
+        loadOrders();
+    }, [page, statusFilter]);
 
-    const getOrderStatusColor = (status: string) => {
-        switch (status) {
-            case "COMPLETED":
-                return "bg-emerald-100 text-emerald-700";
-            case "SHIPPED":
-                return "bg-blue-100 text-blue-700";
-            case "PENDING":
-                return "bg-amber-100 text-amber-700";
-            case "CANCELED":
-                return "bg-red-100 text-red-700";
-            default:
-                return "bg-gray-100 text-gray-700";
+    const loadOrders = async () => {
+        try {
+            setLoading(true);
+            const filterStatus = statusFilter === "ALL" ? undefined : (statusFilter as OrderStatus);
+            const data = await orderApi.list(filterStatus, page, 20);
+            setOrders(data);
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    const getOrderStatusColor = (status: OrderStatus) => {
+        const colors: Record<OrderStatus, string> = {
+            DELIVERED: "bg-green-100 text-green-700 border-green-200",
+            SHIPPED: "bg-cyan-100 text-cyan-700 border-cyan-200",
+            CONFIRMED: "bg-blue-100 text-blue-700 border-blue-200",
+            PACKED: "bg-purple-100 text-purple-700 border-purple-200",
+            PENDING: "bg-amber-100 text-amber-700 border-amber-200",
+            CANCELED: "bg-gray-100 text-gray-700 border-gray-200",
+            RETURNED: "bg-slate-100 text-slate-700 border-slate-200",
+            REFUNDED: "bg-emerald-100 text-emerald-700 border-emerald-200",
+            RETURN_REQUESTED: "bg-orange-100 text-orange-700 border-orange-200",
+        };
+        return colors[status] || "bg-gray-100 text-gray-700 border-gray-200";
     };
 
     const getPaymentStatusColor = (status: string) => {
         return status === "PAID"
-            ? "bg-emerald-100 text-emerald-700"
-            : "bg-red-100 text-red-700";
+            ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+            : "bg-red-100 text-red-700 border-red-200";
     };
 
-    // Stats calculation
-    const stats = [
-        { label: "Total Orders", value: "1,234", color: "bg-blue-500" },
-        { label: "Pending", value: "89", color: "bg-amber-500" },
-        { label: "Shipped", value: "156", color: "bg-purple-500" },
-        { label: "Completed", value: "989", color: "bg-emerald-500" },
-    ];
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+        );
+    }
+
+    const stats = {
+        total: orders?.totalElements || 0,
+        pending: orders?.content.filter(o => o.status === "PENDING").length || 0,
+        shipped: orders?.content.filter(o => o.status === "SHIPPED").length || 0,
+        delivered: orders?.content.filter(o => o.status === "DELIVERED").length || 0,
+    };
 
     return (
         <div className="space-y-6">
@@ -116,11 +100,18 @@ const OrdersPage = () => {
 
             {/* Stats */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {stats.map((stat, index) => (
+                {[
+                    { label: "Total Orders", value: stats.total, color: "bg-blue-500" },
+                    { label: "Pending", value: stats.pending, color: "bg-amber-500" },
+                    { label: "Shipped", value: stats.shipped, color: "bg-purple-500" },
+                    { label: "Delivered", value: stats.delivered, color: "bg-emerald-500" },
+                ].map((stat, index) => (
                     <Card key={index}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-                            <div className={`${stat.color} w-8 h-8 rounded-md`}></div>
+                            <div className={`${stat.color} w-8 h-8 rounded-md flex items-center justify-center`}>
+                                <ShoppingCart className="w-4 h-4 text-white" />
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stat.value}</div>
@@ -133,31 +124,20 @@ const OrdersPage = () => {
             <Card>
                 <CardContent className="pt-6">
                     <div className="flex flex-col md:flex-row gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search by order ID or customer..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="w-full md:w-[180px]">
+                        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as OrderStatus | "ALL")}>
+                            <SelectTrigger className="w-full md:w-[200px]">
                                 <SelectValue placeholder="Filter by status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Status</SelectItem>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="shipped">Shipped</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
-                                <SelectItem value="canceled">Canceled</SelectItem>
+                                <SelectItem value="ALL">All Status</SelectItem>
+                                <SelectItem value="PENDING">Pending</SelectItem>
+                                <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                                <SelectItem value="PACKED">Packed</SelectItem>
+                                <SelectItem value="SHIPPED">Shipped</SelectItem>
+                                <SelectItem value="DELIVERED">Delivered</SelectItem>
+                                <SelectItem value="CANCELED">Canceled</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Button variant="outline" className="gap-2">
-                            <Filter className="h-4 w-4" />
-                            More Filters
-                        </Button>
                     </div>
                 </CardContent>
             </Card>
@@ -170,7 +150,6 @@ const OrdersPage = () => {
                             <TableRow>
                                 <TableHead>Order ID</TableHead>
                                 <TableHead>Customer</TableHead>
-                                <TableHead>Items</TableHead>
                                 <TableHead>Total</TableHead>
                                 <TableHead>Payment</TableHead>
                                 <TableHead>Status</TableHead>
@@ -179,22 +158,24 @@ const OrdersPage = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {orders.map((order) => (
+                            {orders?.content.map((order) => (
                                 <TableRow key={order.id}>
                                     <TableCell className="font-medium text-primary">
-                                        {order.id}
+                                        #{order.id}
                                     </TableCell>
                                     <TableCell>
                                         <div>
-                                            <p className="font-medium">{order.customer}</p>
+                                            <p className="font-medium">{order.shippingFullName}</p>
                                             <p className="text-sm text-muted-foreground">
-                                                {order.email}
+                                                {order.userEmail}
                                             </p>
                                         </div>
                                     </TableCell>
-                                    <TableCell>{order.items} items</TableCell>
                                     <TableCell className="font-semibold">
-                                        ${order.total.toFixed(2)}
+                                        {order.totalAmount.toLocaleString()}đ
+                                        <span className="text-xs text-muted-foreground block">
+                                            + {order.shippingFee.toLocaleString()}đ ship
+                                        </span>
                                     </TableCell>
                                     <TableCell>
                                         <div className="space-y-1">
@@ -207,12 +188,12 @@ const OrdersPage = () => {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge className={getOrderStatusColor(order.orderStatus)}>
-                                            {order.orderStatus}
+                                        <Badge className={getOrderStatusColor(order.status) + " border"}>
+                                            {order.status}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground">
-                                        {order.date}
+                                        {format(new Date(order.createdAt), 'dd/MM/yyyy HH:mm')}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Link href={`/orders/${order.id}`}>
@@ -226,10 +207,35 @@ const OrdersPage = () => {
                             ))}
                         </TableBody>
                     </Table>
+
+                    {/* Pagination */}
+                    {orders && orders.totalPages > 1 && (
+                        <div className="flex items-center justify-between p-4 border-t">
+                            <p className="text-sm text-muted-foreground">
+                                Page {page + 1} of {orders.totalPages} ({orders.totalElements} total)
+                            </p>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={page === 0}
+                                    onClick={() => setPage(page - 1)}
+                                >
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={page >= orders.totalPages - 1}
+                                    onClick={() => setPage(page + 1)}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>
     );
-};
-
-export default OrdersPage;
+}

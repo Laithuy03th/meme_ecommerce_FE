@@ -1,32 +1,44 @@
-import { VoucherType, VoucherValidationResponse } from "@/types";
 import { authenticatedFetch } from "./base";
+import { VoucherType, VoucherValidationResponse } from "@/types";
 
 /**
- * Validate voucher code
+ * Lấy danh sách voucher khả dụng
  */
-export const validateVoucher = async (
-    code: string,
-    orderAmount: number
-): Promise<VoucherValidationResponse> => {
-    const res = await authenticatedFetch(
-        `/vouchers/validate?code=${encodeURIComponent(code)}&orderAmount=${orderAmount}`
-    );
+export const getVouchers = async (): Promise<VoucherType[]> => {
+    try {
+        const res = await authenticatedFetch("/vouchers");
 
-    if (!res.ok) {
-        throw new Error("Failed to validate voucher");
+        if (!res.ok) {
+            console.warn("[API] Failed to fetch vouchers");
+            return [];
+        }
+
+        return await res.json();
+    } catch (error) {
+        console.error("Error fetching vouchers:", error);
+        return [];
     }
-
-    return res.json();
 };
 
 /**
- * Get all active vouchers
+ * Kiểm tra và áp dụng voucher
  */
-export const getActiveVouchers = async (): Promise<VoucherType[]> => {
-    const res = await authenticatedFetch("/vouchers/active");
+export const validateVoucher = async (code: string, orderAmount: number): Promise<VoucherValidationResponse> => {
+    const params = new URLSearchParams({
+        code: code,
+        orderAmount: orderAmount.toString(),
+    });
+
+    const res = await authenticatedFetch(`/vouchers/validate?${params.toString()}`);
 
     if (!res.ok) {
-        throw new Error("Failed to fetch active vouchers");
+        const errorData = await res.json().catch(() => ({}));
+        // Return structured error response instead of throwing to handle UI better
+        return {
+            valid: false,
+            discountAmount: 0,
+            message: errorData.message || "Mã giảm giá không hợp lệ"
+        };
     }
 
     return res.json();

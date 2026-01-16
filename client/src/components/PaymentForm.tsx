@@ -19,7 +19,7 @@ type PaymentMethod = "COD" | "BANKING" | "VNPAY";
 const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormProps) => {
   const { handleSubmit } = useForm();
   const router = useRouter();
-  const { clearCart, removeFromCart, fetchCart } = useCartStore();
+  const { clearCart, removeFromCart, fetchCart, cart } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
 
@@ -31,13 +31,23 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
 
     setIsProcessing(true);
     try {
+      // 1. Sanitize IDs (Remove stale IDs from localStorage that might be product IDs)
+      const validItemIds = selectedItemIds?.filter(id => cart.some(item => item.id === id)) || [];
+
+      if (validItemIds.length === 0 && selectedItemIds && selectedItemIds.length > 0) {
+        // If we had IDs but none match, it's likely a stale state.
+        // Fallback to sending what we have (or empty), but ideally we shouldn't send invalid IDs.
+        console.warn("No valid cart items matching selection. Sending original selection.");
+      }
+
       // 1. Create Order
       const order = await checkout({
         addressId,
+        shippingMethodId: 1, // Defaulting to Standard (1) as per docs
         paymentMethod,
         voucherCode,
         note: "",
-        selectedItemIds,
+        selectedCartItemIds: validItemIds.length > 0 ? validItemIds : (selectedItemIds || []),
       });
 
       // 2. Clear Cart (optimistic)

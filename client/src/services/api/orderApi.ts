@@ -61,7 +61,14 @@ export const validateVoucher = async (code: string, orderAmount: number): Promis
 
 // --- ORDER API ---
 
-export const checkout = async (data: { addressId: number; paymentMethod: string; note?: string; voucherCode?: string; selectedItemIds?: number[] }): Promise<OrderType> => {
+export const checkout = async (data: {
+    addressId: number;
+    shippingMethodId: number;
+    paymentMethod: string;
+    voucherCode?: string;
+    note?: string;
+    selectedCartItemIds: number[]
+}): Promise<OrderType> => {
     const res = await authenticatedFetch("/users/me/orders/checkout", {
         method: "POST",
         body: JSON.stringify(data),
@@ -105,5 +112,13 @@ export const returnOrder = async (id: number, reason: string): Promise<OrderType
         body: JSON.stringify({ reason }),
     });
     if (!res.ok) throw new Error("Failed to return order");
+    return res.json();
+};
+
+export const reorder = async (id: number): Promise<any> => {
+    const res = await authenticatedFetch(`/users/me/orders/${id}/reorder`, {
+        method: "POST",
+    });
+    if (!res.ok) throw new Error("Failed to reorder");
     return res.json();
 };

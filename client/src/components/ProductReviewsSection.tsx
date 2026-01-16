@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Star, MessageCircle, Calendar } from "lucide-react";
+import { Star, MessageCircle, Calendar, Trash2 } from "lucide-react";
 import { ReviewType, ReviewSummaryType } from "@/types";
-//import { deleteMyReview } from "@/services/api/reviewApi";
+import { deleteMyReview } from "@/services/api/reviewApi";
+import { useAuthStore } from "@/stores/authStore";
 import { toast } from "react-toastify";
 
 interface ProductReviewsSectionProps {
@@ -19,17 +20,19 @@ const ProductReviewsSection = ({ productId, initialReviews, reviewSummary }: Pro
         setReviews(initialReviews);
     }, [initialReviews]);
 
-    // const handleDeleteReview = async (reviewId: number) => {
-    //     if (!confirm("Are you sure you want to delete this review?")) return;
+    const { user } = useAuthStore(); // Added useAuthStore hook
 
-    //     try {
-    //         await deleteMyReview(reviewId);
-    //         setReviews(reviews.filter(r => r.id !== reviewId));
-    //         toast.success("Review deleted");
-    //     } catch (error: any) {
-    //         toast.error(error.message || "Failed to delete");
-    //     }
-    // };
+    const handleDeleteReview = async (reviewId: number) => {
+        if (!confirm("Are you sure you want to delete this review?")) return;
+
+        try {
+            await deleteMyReview(reviewId);
+            setReviews(reviews.filter(r => r.id !== reviewId));
+            toast.success("Review deleted");
+        } catch (error: any) {
+            toast.error(error.message || "Failed to delete");
+        }
+    };
 
     // Calculate display stats from Summary if available, else manual
     const totalReviews = reviewSummary ? reviewSummary.totalReviews : reviews.length;
@@ -137,7 +140,12 @@ const ProductReviewsSection = ({ productId, initialReviews, reviewSummary }: Pro
                                     <div className="flex-1">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                                             <div>
-                                                <h4 className="font-bold text-gray-900 text-base">{review.userFullName || "Someone"}</h4>
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-bold text-gray-900 text-base">{review.userFullName || "Someone"}</h4>
+                                                    {user?.fullName === review.userFullName && ( // Simple name check or better ID check if available
+                                                        <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-bold">You</span>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                     <div className="flex">
                                                         {[1, 2, 3, 4, 5].map((s) => (
@@ -151,6 +159,17 @@ const ProductReviewsSection = ({ productId, initialReviews, reviewSummary }: Pro
                                                     </div>
                                                 </div>
                                             </div>
+                                            {/* DELETE ACTION */}
+                                            {/* Note: review.user?.id might be missing in some responses, falling back to name check or if API provides isMine */}
+                                            {(user?.fullName === review.userFullName) && (
+                                                <button
+                                                    onClick={() => handleDeleteReview(review.id)}
+                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                    title="Xóa đánh giá"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </div>
 
                                         <div className="mt-3 text-gray-700 leading-relaxed bg-gray-50/50 p-4 rounded-xl border border-gray-50">

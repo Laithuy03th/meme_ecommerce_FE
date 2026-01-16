@@ -12,7 +12,7 @@ export const uploadFile = async (file: File): Promise<string> => {
 
     const token = useAuthStore.getState().accessToken;
 
-    const res = await fetch(`${BASE_URL}/files/upload/public`, {
+    const res = await fetch(`${BASE_URL}/files/upload`, {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${token}`

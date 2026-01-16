@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getActiveVouchers } from "@/services/api/voucherApi";
+import { getVouchers } from "@/services/api/voucherApi";
 import { VoucherType } from "@/types";
 import VoucherCard from "@/components/VoucherCard";
 import { Tag, Loader2, Frown } from "lucide-react";
@@ -14,7 +14,7 @@ export default function VouchersPage() {
     useEffect(() => {
         const fetchVouchers = async () => {
             try {
-                const data = await getActiveVouchers();
+                const data = await getVouchers();
                 setVouchers(data);
             } catch (err: any) {
                 console.error("Failed to load vouchers:", err);

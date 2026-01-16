@@ -85,7 +85,7 @@ const OrdersPage = () => {
                         <div className="flex justify-between items-center text-sm border-t border-gray-100 pt-4">
                             <span className="text-gray-500">{order.items?.length || 0} items</span>
                             <div className="flex items-center gap-2">
-                                <span className="font-bold text-gray-900">${order.totalAmount.toFixed(2)}</span>
+                                <span className="font-bold text-gray-900">{order.totalAmount.toLocaleString('vi-VN')}đ</span>
                                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                             </div>
                         </div>

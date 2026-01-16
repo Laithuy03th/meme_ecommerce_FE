@@ -304,7 +304,7 @@ const OrderDetailPage = () => {
                                     </div>
 
                                     <div className="flex flex-col items-end gap-3 min-w-[120px]">
-                                        <p className="font-bold text-gray-900 text-lg">${(item.price || item.unitPrice || 0).toFixed(2)}</p>
+                                        <p className="font-bold text-gray-900 text-lg">{(item.price || item.unitPrice || 0).toLocaleString('vi-VN')}đ</p>
 
                                         {/* PER-ITEM ACTION BUTTON */}
                                         {order.status === ORDER_STATUS.DELIVERED && !isReturned && (
@@ -334,7 +334,6 @@ const OrderDetailPage = () => {
                     </div>
 
                     {/* ACTIONS */}
-                    {/* ACTIONS */}
                     <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-100 mt-6">
                         {/* 1. STATE: PENDING */}
                         {order.status === ORDER_STATUS.PENDING && (
@@ -353,7 +352,6 @@ const OrderDetailPage = () => {
                             </button>
                         )}
 
-                        {/* 3. STATE: DELIVERED (The Buffer Zone) */}
                         {/* 3. STATE: DELIVERED (The Buffer Zone) */}
                         {order.status === ORDER_STATUS.DELIVERED && !isReturned && (
                             <>
@@ -397,16 +395,16 @@ const OrderDetailPage = () => {
                         <h3 className="font-bold text-gray-900">Order Summary</h3>
                         <div className="flex justify-between text-sm text-gray-600">
                             <span>Subtotal</span>
-                            <span>${((order.totalAmount || 0) - (order.shippingFee || 0)).toFixed(2)}</span>
+                            <span>{((order.subtotal || order.totalAmount) - (order.shippingFee || 0)).toLocaleString('vi-VN')}đ</span>
                         </div>
                         <div className="flex justify-between text-sm text-gray-600">
                             <span>Shipping</span>
-                            <span>${(order.shippingFee || 0).toFixed(2)}</span>
+                            <span>{(order.shippingFee || 0).toLocaleString('vi-VN')}đ</span>
                         </div>
                         <div className="h-px bg-gray-200" />
                         <div className="flex justify-between font-bold text-gray-900">
                             <span>Total</span>
-                            <span>${(order.totalAmount || 0).toFixed(2)}</span>
+                            <span>{(order.totalAmount || 0).toLocaleString('vi-VN')}đ</span>
                         </div>
                     </div>
 

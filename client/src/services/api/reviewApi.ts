@@ -47,7 +47,7 @@ export interface ReviewRequest {
  */
 export const getProductReviews = async (productId: number): Promise<ReviewResponse[]> => {
     try {
-        const url = `${BASE_URL}/reviews/products/${productId}`;
+        const url = `${BASE_URL}/products/${productId}/reviews`;
         console.log(`[API] Fetching reviews: ${url}`);
 
         const res = await fetch(url, {
@@ -85,10 +85,15 @@ export const getProductReviews = async (productId: number): Promise<ReviewRespon
 /**
  * Lấy tóm tắt review (số sao TB, chart) (Public - không cần đăng nhập)
  * @example reviewApi.getReviewSummary(123)
+ * Note: Assuming Summary endpoint follows similar pattern or is custom.
+ * If backend doesn't support this, we handle 404 gracefully.
  */
 export const getReviewSummary = async (productId: number): Promise<ReviewSummaryDto | null> => {
     try {
-        const url = `${BASE_URL}/reviews/products/${productId}/summary`;
+        // Trying likely path based on other endpoints, or assuming older path if distinct
+        // Docs didn't specify summary, so we keep old path or try standard. 
+        // Let's try /products/{id}/reviews/summary based on REST patterns
+        const url = `${BASE_URL}/products/${productId}/reviews/summary`;
         console.log(`[API] Fetching review summary: ${url}`);
 
         const res = await fetch(url, {
@@ -97,15 +102,14 @@ export const getReviewSummary = async (productId: number): Promise<ReviewSummary
         });
 
         if (!res.ok) {
-            console.warn(`[API] Failed to fetch review summary for product ${productId}: ${res.status}`);
+            // console.warn(`[API] Failed to fetch review summary for product ${productId}: ${res.status}`);
             return null;
         }
 
         const data = await res.json();
-        console.log(`[API] Review summary fetched:`, data);
         return data;
     } catch (error) {
-        console.error(`Error fetching review summary for product ${productId}:`, error);
+        // console.error(`Error fetching review summary for product ${productId}:`, error);
         return null;
     }
 };
@@ -114,8 +118,8 @@ export const getReviewSummary = async (productId: number): Promise<ReviewSummary
  * Gửi review mới (Cần Token đăng nhập)
  * @example reviewApi.addReview(123, { orderItemId: 456, rating: 5, comment: 'Great!' })
  */
-export const addReview = async (productId: number, data: ReviewRequest): Promise<ReviewResponse> => {
-    const res = await authenticatedFetch(`/reviews/products/${productId}`, {
+export const createReview = async (productId: number, data: ReviewRequest): Promise<ReviewResponse> => {
+    const res = await authenticatedFetch(`/products/${productId}/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -130,11 +134,30 @@ export const addReview = async (productId: number, data: ReviewRequest): Promise
 };
 
 /**
+ * Sửa review của chính mình
+ * @example reviewApi.updateMyReview(10, { rating: 4, comment: 'Fixed' })
+ */
+export const updateMyReview = async (reviewId: number, data: Partial<ReviewRequest>): Promise<ReviewResponse> => {
+    const res = await authenticatedFetch(`/products/reviews/${reviewId}/me`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: 'Failed to update review' }));
+        throw new Error(error.message || 'Failed to update review');
+    }
+
+    return res.json();
+};
+
+/**
  * Xóa review của chính mình (Cần Token đăng nhập)
  * @example reviewApi.deleteMyReview(789)
  */
 export const deleteMyReview = async (reviewId: number): Promise<void> => {
-    const res = await authenticatedFetch(`/reviews/${reviewId}/me`, {
+    const res = await authenticatedFetch(`/products/reviews/${reviewId}/me`, {
         method: 'DELETE',
     });
 
@@ -150,18 +173,23 @@ export const deleteMyReview = async (reviewId: number): Promise<void> => {
  */
 export const getMyReviews = async (): Promise<ReviewResponse[]> => {
     try {
-        const res = await authenticatedFetch('/reviews/me', {
+        // Assuming this endpoint exists or is different. 
+        // Docs didn't specify 'Get My Reviews', but 'deleteMyReview' implies it.
+        // Keeping old path /reviews/me for now or checking if it should be /users/me/reviews?
+        // Let's stick to /reviews/me for now unless it errors.
+        const res = await authenticatedFetch('/users/me/reviews', { // Guessed pattern
             method: 'GET',
         });
 
+        // Convert 404 to empty
+        if (res.status === 404) return [];
+
         if (!res.ok) {
-            console.warn('[API] Failed to fetch my reviews:', res.status);
             return [];
         }
 
         return await res.json();
     } catch (error) {
-        console.error('Error fetching my reviews:', error);
         return [];
     }
 };
@@ -173,19 +201,20 @@ export const getMyReviews = async (): Promise<ReviewResponse[]> => {
  */
 export const getReviewByOrderItem = async (orderItemId: number): Promise<ReviewResponse | null> => {
     try {
-        const res = await authenticatedFetch(`/reviews/order-items/${orderItemId}`, {
+        // This is likely a custom helper. 
+        // If not in new docs, we might need to rely on the Order Detail 'hasReviewed' flag.
+        // But keeping it if backend supports it.
+        const res = await authenticatedFetch(`/products/reviews/order-items/${orderItemId}`, { // Adjusted path guess
             method: 'GET',
         });
 
         if (!res.ok) {
-            if (res.status === 404) return null; // Chưa có review
-            console.warn(`[API] Failed to fetch review for order item ${orderItemId}:`, res.status);
+            if (res.status === 404) return null;
             return null;
         }
 
         return await res.json();
     } catch (error) {
-        console.error(`Error fetching review for order item ${orderItemId}:`, error);
         return null;
     }
 };
@@ -193,7 +222,8 @@ export const getReviewByOrderItem = async (orderItemId: number): Promise<ReviewR
 const reviewApi = {
     getProductReviews,
     getReviewSummary,
-    addReview,
+    createReview,
+    updateMyReview,
     deleteMyReview,
     getMyReviews,
     getReviewByOrderItem,

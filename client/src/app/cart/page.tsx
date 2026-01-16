@@ -12,6 +12,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { getSafeImageUrl } from "@/lib/imageUtils";
+import SafeImage from "@/components/SafeImage";
 
 const CartPage = () => {
   const {
@@ -157,20 +159,27 @@ const CartPage = () => {
 
               <div className="space-y-4">
                 {cart.map((item) => (
-                  <div key={item.id} className={`flex gap-6 bg-white rounded-2xl p-6 transition-all duration-300 border-2 shadow-sm hover:shadow-lg ${selectedItemIds.includes(item.id) ? 'border-primary shadow-primary/10' : 'border-gray-100 hover:border-primary/30'}`}>
+                  <div key={item.id} className={`flex gap-6 bg-white rounded-2xl p-6 transition-all duration-300 border shadow-sm hover:shadow-lg ${selectedItemIds.includes(item.id) ? 'border-primary shadow-primary/10' : 'border-slate-100 hover:border-primary/30'}`}>
                     {/* Checkbox */}
                     <div className="flex items-center">
                       <button
                         onClick={() => toggleSelection(item.id)}
-                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${selectedItemIds.includes(item.id) ? 'bg-gradient-to-r from-primary to-secondary border-primary scale-110' : 'border-gray-300 bg-white hover:border-primary'}`}
+                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${selectedItemIds.includes(item.id) ? 'bg-gradient-to-r from-primary to-secondary border-primary scale-110' : 'border-slate-300 bg-white hover:border-primary'}`}
                       >
                         {selectedItemIds.includes(item.id) && <CheckSquare className="w-4 h-4 text-white" />}
                       </button>
                     </div>
 
-                    <div className="relative w-28 h-28 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div className="relative w-28 h-28 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-md hover:shadow-xl transition-shadow duration-300">
                       <Link href={`/products/${item.productId}`}>
-                        <Image src={item.thumbnailUrl} alt={item.productName} fill className="object-cover hover:scale-110 transition-transform duration-500" />
+                        <SafeImage
+                          src={item.thumbnailUrl}
+                          productId={item.productId}
+                          productName={item.productName}
+                          alt={item.productName}
+                          fill
+                          className="object-cover hover:scale-110 transition-transform duration-500"
+                        />
                       </Link>
                     </div>
 
@@ -178,38 +187,53 @@ const CartPage = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <Link href={`/products/${item.productId}`}>
-                            <h3 className="text-lg font-bold text-gray-900 hover:text-primary transition-colors">{item.productName}</h3>
+                            <h3 className="text-lg font-bold text-slate-900 hover:text-primary transition-colors line-clamp-1">{item.productName}</h3>
                           </Link>
-                          <div className="flex gap-3 text-sm text-gray-500 mt-2">
-                            {item.color && <span className="px-2 py-1 bg-gray-100 rounded-lg font-medium">Color: {item.color}</span>}
-                            {item.size && <span className="px-2 py-1 bg-gray-100 rounded-lg font-medium">Size: {item.size}</span>}
+                          <div className="flex gap-3 text-sm text-slate-500 mt-2">
+                            {(item.color || item.size) ? (
+                              <>
+                                {item.color && <span className="px-2 py-1 bg-slate-100 rounded-lg font-medium">Color: {item.color}</span>}
+                                {item.size && <span className="px-2 py-1 bg-slate-100 rounded-lg font-medium">Size: {item.size}</span>}
+                              </>
+                            ) : (
+                              <span className="px-2 py-1 bg-slate-100 rounded-lg font-medium italic">Standard</span>
+                            )}
                           </div>
                         </div>
                         <button
                           onClick={() => removeFromCart(item.id)}
-                          className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all duration-300"
+                          className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-all duration-300"
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
 
                       <div className="flex justify-between items-center mt-4">
-                        <div className="flex items-center bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                        <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                           <button
                             onClick={() => handleQuantityChange(item.id, item.quantity, "decrement")}
-                            className="p-3 hover:bg-gray-50 text-gray-600 transition-colors"
+                            className="p-2 hover:bg-slate-50 text-slate-600 transition-colors"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
-                          <span className="w-12 text-center font-bold text-gray-900">{item.quantity}</span>
+                          <span className="w-10 text-center font-bold text-slate-900 text-sm">{item.quantity}</span>
                           <button
                             onClick={() => handleQuantityChange(item.id, item.quantity, "increment")}
-                            className="p-3 hover:bg-gray-50 text-gray-600 transition-colors"
+                            className="p-2 hover:bg-slate-50 text-slate-600 transition-colors"
                           >
                             <Plus className="w-4 h-4" />
                           </button>
                         </div>
-                        <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">{item.totalPrice.toLocaleString('vi-VN')}đ</span>
+                        <div className="text-right">
+                          <div className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                            {item.totalPrice.toLocaleString('vi-VN')}đ
+                          </div>
+                          {item.quantity > 1 && (
+                            <div className="text-xs text-slate-400 font-medium">
+                              {item.unitPrice.toLocaleString('vi-VN')}đ / item
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

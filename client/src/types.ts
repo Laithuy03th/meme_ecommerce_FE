@@ -270,21 +270,24 @@ export type OrderTimelineType = {
 
 export type OrderType = {
   id: number;
-  orderNumber?: string; // Some APIs return this
+  orderNumber?: string;
   status: string;
   paymentStatus: string;
-  paymentMethod: string | { type: string; last4?: string }; // Handle both string and object
+  paymentMethod: string | { type: string; last4?: string };
   totalAmount: number;
   shippingFee: number;
+  subtotal?: number; // Added from GET /orders/1 response
   note?: string;
   createdAt: string;
-  items?: OrderItemType[]; // Optional to handle cases when items not loaded
+  items?: OrderItemType[];
   timeline?: OrderTimelineType[];
   shippingAddress?: {
     fullName: string;
-    addressLine: string;
+    addressLine: string; // API returns addressLine
     phone: string;
   };
+  itemCount?: number; // List view has this
+  firstItemImageUrl?: string; // List view has this
 };
 
 // --- WISHLIST TYPES ---

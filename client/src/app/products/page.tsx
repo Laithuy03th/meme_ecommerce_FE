@@ -2,7 +2,7 @@ import ProductList from "@/components/ProductList";
 import FilterSidebar from "@/components/FilterSidebar";
 import Filter from "@/components/Filter";
 import Pagination from "@/components/Pagination";
-import { getCategories, getProducts } from "@/services/api";
+import { getCategories, searchProducts } from "@/services/api";
 import { Sparkles, Package, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 
@@ -14,7 +14,7 @@ const ProductsPage = async ({
   const params = await searchParams;
 
   const categorySlug = params.category as string;
-  const search = params.search as string;
+  const keyword = params.keyword as string; // ✅ Fixed: Use 'keyword' instead of 'search'
   const sort = (params.sort as string) || "newest";
   const minPrice = params.minPrice ? Number(params.minPrice) : undefined;
   const maxPrice = params.maxPrice ? Number(params.maxPrice) : undefined;
@@ -24,11 +24,14 @@ const ProductsPage = async ({
   // Fetch data concurrently
   const [categories, productsData] = await Promise.all([
     getCategories(),
-    getProducts(page - 1, size, sort, {
-      search,
+    searchProducts({
+      keyword,          // ✅ Now uses keyword for proper filtering
+      category: categorySlug,
       minPrice,
       maxPrice,
-      categorySlug,
+      sortBy: sort as any,
+      page: page - 1,
+      size,
     }),
   ]);
 
@@ -125,7 +128,7 @@ const ProductsPage = async ({
           {/* Main Content */}
           <div className="flex-1">
             {/* Flash Sale Banner - Only show if no search/filter */}
-            {!search && !categorySlug && !minPrice && !maxPrice && (
+            {!keyword && !categorySlug && !minPrice && !maxPrice && (
               <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-8 md:p-12 mb-8 text-white shadow-2xl">
                 <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                   <div>
@@ -186,10 +189,10 @@ const ProductsPage = async ({
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <div>
                 <h2 className="text-2xl font-black text-gray-900">
-                  {search ? (
+                  {keyword ? (
                     <>
                       Search results for{" "}
-                      <span className="text-primary">"{search}"</span>
+                      <span className="text-primary">"{keyword}"</span>
                     </>
                   ) : (
                     "Products"

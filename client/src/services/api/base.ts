@@ -46,6 +46,9 @@ const processQueue = (error: Error | null, token: string | null = null) => {
     failedQueue = [];
 };
 
+/**
+ * ✅ Updated: Refresh token using HttpOnly Cookie
+ */
 const performRefreshToken = async (store: any): Promise<string> => {
     if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -53,26 +56,23 @@ const performRefreshToken = async (store: any): Promise<string> => {
         });
     }
 
-    const refreshTokenStr = store.refreshToken;
-    if (!refreshTokenStr) {
-        throw new ApiError("No refresh token available", 401);
-    }
-
     isRefreshing = true;
 
     try {
+        // ✅ Gọi refresh API (sử dụng HttpOnly Cookie)
         const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
             method: "POST",
+            credentials: 'include', // ✅ Quan trọng
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refreshToken: refreshTokenStr }),
+            // ❌ Không gửi body nữa
         });
 
         if (!refreshRes.ok) throw new Error("Refresh failed");
 
         const refreshResponse = await refreshRes.json();
 
-        // Use updateTokens instead of login to avoid side effects
-        store.updateTokens(refreshResponse.user, refreshResponse.accessToken, refreshResponse.refreshToken);
+        // ✅ Update store (không có refreshToken nữa)
+        store.updateTokens(refreshResponse.user, refreshResponse.accessToken);
         processQueue(null, refreshResponse.accessToken);
 
         return refreshResponse.accessToken;
@@ -85,6 +85,9 @@ const performRefreshToken = async (store: any): Promise<string> => {
     }
 };
 
+/**
+ * ✅ Authenticated Fetch với HttpOnly Cookie support
+ */
 export const authenticatedFetch = async (endpoint: string, options: RequestInit = {}): Promise<Response> => {
     const { useAuthStore } = await import("@/stores/authStore");
     const store = useAuthStore.getState();
@@ -95,6 +98,12 @@ export const authenticatedFetch = async (endpoint: string, options: RequestInit 
         ...options.headers,
         ...(t ? { "Authorization": `Bearer ${t}` } : {}),
     });
+
+    // ✅ Always include credentials for cookies
+    const fetchOptions = {
+        ...options,
+        credentials: 'include' as RequestCredentials,
+    };
 
     // 1. Check expiration BEFORE request
     if (token && isTokenExpired(token)) {
@@ -118,7 +127,7 @@ export const authenticatedFetch = async (endpoint: string, options: RequestInit 
     }
 
     let res = await fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
+        ...fetchOptions,
         headers: getHeaders(token),
     });
 
@@ -132,7 +141,7 @@ export const authenticatedFetch = async (endpoint: string, options: RequestInit 
                 });
                 // Retry with new token
                 res = await fetch(`${BASE_URL}${endpoint}`, {
-                    ...options,
+                    ...fetchOptions,
                     headers: getHeaders(token),
                 });
             } catch (error) {
@@ -144,7 +153,7 @@ export const authenticatedFetch = async (endpoint: string, options: RequestInit 
                 token = await performRefreshToken(store);
                 // Retry with new token
                 res = await fetch(`${BASE_URL}${endpoint}`, {
-                    ...options,
+                    ...fetchOptions,
                     headers: getHeaders(token),
                 });
             } catch (error) {

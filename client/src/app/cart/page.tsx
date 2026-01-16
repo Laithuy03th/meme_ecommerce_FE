@@ -2,6 +2,7 @@
 
 import PaymentForm from "@/components/PaymentForm";
 import ShippingForm from "@/components/ShippingForm";
+import VoucherInput from "@/components/VoucherInput";
 import { validateVoucher } from "@/services/api";
 import useCartStore from "@/stores/cartStore";
 import { VoucherValidationResponse } from "@/types";
@@ -208,7 +209,7 @@ const CartPage = () => {
                             <Plus className="w-4 h-4" />
                           </button>
                         </div>
-                        <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">${item.totalPrice.toFixed(2)}</span>
+                        <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">{item.totalPrice.toLocaleString('vi-VN')}đ</span>
                       </div>
                     </div>
                   </div>
@@ -248,62 +249,38 @@ const CartPage = () => {
             <div className="space-y-4 text-base">
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-gray-600 font-medium">Selected Items ({selectedItems.length})</span>
-                <span className="font-bold text-gray-900">${selectedSubtotal.toFixed(2)}</span>
+                <span className="font-bold text-gray-900">{selectedSubtotal.toLocaleString('vi-VN')}đ</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-gray-600 font-medium">Shipping</span>
-                <span className="font-bold text-gray-900">${shippingFee.toFixed(2)}</span>
+                <span className="font-bold text-gray-900">{shippingFee.toLocaleString('vi-VN')}đ</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-green-600 font-medium">Discount</span>
-                  <span className="font-bold text-green-600">-${discount.toFixed(2)}</span>
+                  <span className="font-bold text-green-600">-{discount.toLocaleString('vi-VN')}đ</span>
                 </div>
               )}
               <div className="flex justify-between items-center pt-4">
                 <span className="text-xl font-bold text-gray-900">Total</span>
-                <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">${finalTotal.toFixed(2)}</span>
+                <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">{finalTotal.toLocaleString('vi-VN')}đ</span>
               </div>
             </div>
 
             {/* VOUCHER INPUT */}
             {step === "cart" && (
-              <div className="space-y-3 pt-6 border-t border-gray-200">
-                <div className="flex items-center gap-2 text-gray-900 font-bold">
-                  <Tag className="w-5 h-5 text-primary" />
-                  <label>Promo Code</label>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={voucherCode}
-                    onChange={(e) => setVoucherCode(e.target.value)}
-                    placeholder="Enter your code"
-                    className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition-all"
-                    disabled={!!appliedVoucher}
-                  />
-                  {appliedVoucher ? (
-                    <button
-                      onClick={handleRemoveVoucher}
-                      className="bg-red-100 text-red-600 px-5 py-3 rounded-xl text-sm font-bold hover:bg-red-200 transition-colors"
-                    >
-                      Remove
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleApplyVoucher}
-                      disabled={isValidatingVoucher || !voucherCode}
-                      className="bg-gradient-to-r from-primary to-secondary text-white px-5 py-3 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isValidatingVoucher ? "..." : "Apply"}
-                    </button>
-                  )}
-                </div>
-                {appliedVoucher && (
-                  <p className="text-sm text-green-600 font-medium bg-green-50 px-3 py-2 rounded-lg">
-                    ✓ Voucher applied: {appliedVoucher.voucher?.code} (-${appliedVoucher.discountAmount})
-                  </p>
-                )}
+              <div className="pt-6 border-t border-gray-200">
+                <VoucherInput
+                  cartTotal={selectedSubtotal}
+                  onVoucherApplied={(discount, code) => {
+                    setAppliedVoucher({
+                      valid: true,
+                      discountAmount: discount,
+                      voucher: { code } as any,
+                      message: "Voucher applied successfully"
+                    });
+                  }}
+                />
               </div>
             )}
 

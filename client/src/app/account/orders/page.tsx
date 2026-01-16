@@ -4,6 +4,7 @@ import { getOrders } from "@/services/api";
 import { OrderType } from "@/types";
 import { ChevronRight, Package, ShoppingBag } from "lucide-react";
 import Link from "next/link";
+import { getOrderStatusColor, getOrderStatusLabel } from "@/lib/orderUtils";
 import { useEffect, useState } from "react";
 
 const OrdersPage = () => {
@@ -77,12 +78,8 @@ const OrdersPage = () => {
                                     </span>
                                 </div>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-600' :
-                                order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-600' :
-                                    order.status === 'CANCELLED' ? 'bg-red-100 text-red-600' :
-                                        'bg-blue-100 text-blue-600'
-                                }`}>
-                                {order.status}
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getOrderStatusColor(order.status)}`}>
+                                {getOrderStatusLabel(order.status)}
                             </span>
                         </div>
                         <div className="flex justify-between items-center text-sm border-t border-gray-100 pt-4">

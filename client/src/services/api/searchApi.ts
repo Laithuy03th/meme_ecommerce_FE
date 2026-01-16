@@ -67,6 +67,7 @@ export const getSearchSuggestions = async (
 
         const params = new URLSearchParams();
         params.append("keyword", keyword);
+        // API expects 'category' not 'categorySlug'
         if (category) {
             params.append("category", category);
         }

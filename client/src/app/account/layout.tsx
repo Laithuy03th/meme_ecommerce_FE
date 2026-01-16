@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { User, Package, MapPin, LogOut, Settings } from "lucide-react";
+import { useAuthStore } from "@/stores/authStore";
 
 const AccountLayout = ({ children }: { children: React.ReactNode }) => {
     const pathname = usePathname();
+    const router = useRouter();
+    const { user, logout } = useAuthStore();
+
+    const handleLogout = async () => {
+        await logout();
+        router.push("/login");
+    };
 
     const links = [
         { name: "Profile", href: "/account", icon: User },
@@ -24,12 +32,22 @@ const AccountLayout = ({ children }: { children: React.ReactNode }) => {
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
                         <div className="p-6 bg-gray-50 border-b border-gray-100">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-500">
-                                    JD
-                                </div>
-                                <div>
-                                    <p className="font-bold text-gray-900">John Doe</p>
-                                    <p className="text-xs text-gray-500">john@example.com</p>
+                                {user?.avatarUrl ? (
+                                    <div className="relative w-12 h-12 rounded-full overflow-hidden border border-gray-200">
+                                        <img
+                                            src={user.avatarUrl}
+                                            alt={user.fullName || "User"}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-xl font-bold text-primary border border-primary/10">
+                                        {user?.fullName?.charAt(0).toUpperCase() || "U"}
+                                    </div>
+                                )}
+                                <div className="overflow-hidden">
+                                    <p className="font-bold text-gray-900 truncate" title={user?.fullName}>{user?.fullName || "Guest"}</p>
+                                    <p className="text-xs text-gray-500 truncate" title={user?.email}>{user?.email || "guest@example.com"}</p>
                                 </div>
                             </div>
                         </div>
@@ -51,7 +69,10 @@ const AccountLayout = ({ children }: { children: React.ReactNode }) => {
                                     </Link>
                                 );
                             })}
-                            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors mt-2">
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors mt-2 cursor-pointer"
+                            >
                                 <LogOut className="w-5 h-5" />
                                 Sign Out
                             </button>

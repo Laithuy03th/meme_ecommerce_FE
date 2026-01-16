@@ -3,10 +3,11 @@
 import { Search, X, TrendingUp, Sparkles, ArrowRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getProductSuggestions, getPopularSearchKeywords } from "@/services/api";
+import { getPopularSearchKeywords, getSearchSuggestions } from "@/services/api";
 import { ProductType, SearchKeywordSuggestion } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
+import { getSafeImageUrl } from "@/lib/imageUtils";
 
 interface SearchBarProps {
   onToggle?: (isOpen: boolean) => void;
@@ -15,6 +16,7 @@ interface SearchBarProps {
 const SearchBar = ({ onToggle }: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<ProductType[]>([]);
+  // Store full object array to access category name
   const [popularKeywords, setPopularKeywords] = useState<Record<string, SearchKeywordSuggestion[]>>({});
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,11 +35,12 @@ const SearchBar = ({ onToggle }: SearchBarProps) => {
   useEffect(() => {
     const fetchKeywords = async () => {
       const keywords = await getPopularSearchKeywords();
+      // Group by categorySlug
       const grouped = keywords.reduce((acc, item) => {
-        if (!acc[item.category]) {
-          acc[item.category] = [];
+        if (!acc[item.categorySlug]) {
+          acc[item.categorySlug] = [];
         }
-        acc[item.category].push(item);
+        acc[item.categorySlug].push(item);
         return acc;
       }, {} as Record<string, SearchKeywordSuggestion[]>);
       setPopularKeywords(grouped);
@@ -53,7 +56,7 @@ const SearchBar = ({ onToggle }: SearchBarProps) => {
 
     setIsLoading(true);
     try {
-      const data = await getProductSuggestions(keyword, currentCategory || undefined);
+      const data = await getSearchSuggestions(keyword, currentCategory || undefined);
       setSuggestions(data);
     } catch (error) {
       console.error("Error fetching suggestions:", error);
@@ -80,7 +83,7 @@ const SearchBar = ({ onToggle }: SearchBarProps) => {
     e.preventDefault();
     if (query.trim()) {
       const params = new URLSearchParams();
-      params.set("search", query);
+      params.set("keyword", query);
       if (currentCategory) {
         params.set("category", currentCategory);
       }
@@ -91,7 +94,7 @@ const SearchBar = ({ onToggle }: SearchBarProps) => {
 
   const handleKeywordClick = (keyword: string, categorySlug: string) => {
     const params = new URLSearchParams();
-    params.set("search", keyword);
+    params.set("keyword", keyword);
     params.set("category", categorySlug);
     router.push(`/products?${params.toString()}`);
     setIsOpen(false);
@@ -166,7 +169,7 @@ const SearchBar = ({ onToggle }: SearchBarProps) => {
                       >
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
                           <Image
-                            src={product.thumbnailUrl || product.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=100"}
+                            src={getSafeImageUrl(product.thumbnailUrl || product.image, product.id, product.name)}
                             alt={product.name}
                             fill
                             className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -177,8 +180,14 @@ const SearchBar = ({ onToggle }: SearchBarProps) => {
                             {product.name}
                           </h4>
                           <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                            <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide">{product.categoryName}</span>
-                            <span className="font-bold text-primary">${product.price}</span>
+                            {product.categoryName && (
+                              <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide">
+                                {product.categoryName}
+                              </span>
+                            )}
+                            <span className="font-bold text-primary">
+                              {product.price.toLocaleString('vi-VN')}đ
+                            </span>
                           </div>
                         </div>
                         <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
@@ -202,11 +211,11 @@ const SearchBar = ({ onToggle }: SearchBarProps) => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                {Object.entries(popularKeywords).map(([category, items]) => (
-                  <div key={category}>
+                {Object.entries(popularKeywords).map(([categorySlug, items]) => (
+                  <div key={categorySlug}>
                     <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                      {category}
+                      {items[0]?.category || categorySlug}
                     </h4>
                     <ul className="space-y-2">
                       {items.map((item) => (

@@ -1,5 +1,22 @@
-import { LoginResponse, RegisterResponse } from "@/types";
-import { BASE_URL } from "./base";
+import { LoginResponse, RegisterResponse, UserType } from "@/types";
+import { BASE_URL, authenticatedFetch } from "./base";
+
+/**
+ * Update user profile
+ */
+export const updateProfile = async (data: Partial<UserType>): Promise<UserType> => {
+    const res = await authenticatedFetch("/users/me", {
+        method: "PUT",
+        body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to update profile");
+    }
+
+    return res.json();
+};
+
 
 /**
  * Login API - Refresh token sẽ được set vào HttpOnly Cookie tự động
@@ -8,7 +25,7 @@ import { BASE_URL } from "./base";
 export const login = async (data: { email: string; password: string }): Promise<LoginResponse> => {
     const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
-        credentials: 'include', // ✅ Quan trọng: để browser nhận/gửi cookie
+        credentials: 'include', // Quan trọng: để browser nhận/gửi cookie
         headers: {
             "Content-Type": "application/json",
         },
@@ -68,7 +85,7 @@ export const logout = async (token: string): Promise<void> => {
     try {
         await fetch(`${BASE_URL}/auth/logout`, {
             method: "POST",
-            credentials: 'include', // ✅ Để cookie bị xóa
+            credentials: 'include', // Để cookie bị xóa
             headers: {
                 "Authorization": `Bearer ${token}`,
             },
@@ -87,7 +104,7 @@ export const getMe = async (token?: string): Promise<any> => {
     }
 
     const res = await fetch(`${BASE_URL}/users/me`, {
-        credentials: 'include', // ✅ Consistency
+        credentials: 'include', //  Consistency
         headers: {
             "Authorization": `Bearer ${token}`,
         },
@@ -98,4 +115,33 @@ export const getMe = async (token?: string): Promise<any> => {
     }
 
     return res.json();
+};
+
+export const forgotPassword = async (email: string): Promise<void> => {
+    const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to send reset email");
+    }
+};
+
+export const changePassword = async (data: { oldPassword: string; newPassword: string }, token: string): Promise<void> => {
+    const res = await fetch(`${BASE_URL}/auth/change-password`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to change password");
+    }
 };

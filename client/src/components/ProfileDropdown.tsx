@@ -80,10 +80,18 @@ const ProfileDropdown = () => {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors focus:outline-none ring-2 ring-transparent focus:ring-gray-100"
             >
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden">
-                    <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
-                    </div>
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden relative">
+                    {user.avatarUrl ? (
+                        <img
+                            src={user.avatarUrl}
+                            alt={user.fullName || "User"}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                            {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+                        </div>
+                    )}
                 </div>
             </button>
 
@@ -92,8 +100,18 @@ const ProfileDropdown = () => {
                     {/* Header */}
                     <div className="px-6 py-4 border-b border-gray-100">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center text-primary font-bold bg-primary/10">
-                                {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+                            <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center border border-slate-200 relative">
+                                {user.avatarUrl ? (
+                                    <img
+                                        src={user.avatarUrl}
+                                        alt={user.fullName || "User"}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                        {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+                                    </div>
+                                )}
                             </div>
                             <div className="overflow-hidden">
                                 <p className="font-bold text-gray-900 truncate">{user.fullName}</p>

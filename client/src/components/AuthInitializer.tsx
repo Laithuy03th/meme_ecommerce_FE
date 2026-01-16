@@ -1,59 +1,71 @@
 "use client";
 
 import { getMe } from "@/services/api/authApi";
-import { BASE_URL } from "@/services/api/base";
+import { refreshToken as refreshTokenAPI } from "@/services/api/authApi";
 import { useAuthStore } from "@/stores/authStore";
 import useCartStore from "@/stores/cartStore";
 import useWishlistStore from "@/stores/wishlistStore";
 import { useEffect } from "react";
 
+/**
+ * AuthInitializer - Kiểm tra và khôi phục session khi app load
+ * Với HttpOnly Cookie auth, refresh token không cần trong store
+ */
 const AuthInitializer = () => {
-    const { login, logout, accessToken, refreshToken } = useAuthStore();
+    const { login, logout, accessToken, updateTokens } = useAuthStore();
 
     useEffect(() => {
         const initAuth = async () => {
             // If we have an access token, verify it
             if (accessToken) {
                 try {
+                    // Verify current token
                     await getMe(accessToken);
-                    // If successful, fetch cart and wishlist
+
+                    // Token valid - fetch user data
                     useCartStore.getState().fetchCart();
                     useWishlistStore.getState().fetchWishlist();
                 } catch (error: any) {
-                    // If 401, try to refresh
-                    if (error.status === 401 && refreshToken) {
-                        try {
-                            // Manual refresh call to avoid circular dependency in interceptor if possible,
-                            // or just rely on the interceptor if it handles it. 
-                            // But here we want to explicitly check validity on load.
-                            const refreshRes = await fetch(`${BASE_URL} /auth/refresh`, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ refreshToken }),
-                            });
+                    // Token invalid/expired - try refresh
+                    console.log('Access token expired, attempting refresh...');
 
-                            if (refreshRes.ok) {
-                                const data = await refreshRes.json();
-                                login(data.user, data.accessToken, data.refreshToken);
-                                useCartStore.getState().fetchCart();
-                                useWishlistStore.getState().fetchWishlist();
-                            } else {
-                                logout();
-                            }
-                        } catch (refreshError) {
-                            console.error("Token refresh failed", refreshError);
-                            logout();
-                        }
-                    } else {
-                        // Other errors or no refresh token
+                    try {
+                        // ✅ Gọi refresh (sử dụng HttpOnly Cookie)
+                        const refreshData = await refreshTokenAPI();
+
+                        // Update với token mới
+                        updateTokens(refreshData.user, refreshData.accessToken);
+
+                        // Fetch data với token mới
+                        useCartStore.getState().fetchCart();
+                        useWishlistStore.getState().fetchWishlist();
+
+                        console.log('Token refreshed successfully');
+                    } catch (refreshError) {
+                        // Refresh failed - logout
+                        console.error("Token refresh failed:", refreshError);
                         logout();
                     }
+                }
+            } else {
+                // No access token - try silent refresh with cookie
+                // Trường hợp: Cookie còn hạn nhưng store bị clear
+                try {
+                    const refreshData = await refreshTokenAPI();
+                    updateTokens(refreshData.user, refreshData.accessToken);
+                    useCartStore.getState().fetchCart();
+                    useWishlistStore.getState().fetchWishlist();
+                    console.log('Session restored from cookie');
+                } catch (error) {
+                    // No valid session - user needs to login
+                    console.log('No valid session found');
                 }
             }
         };
 
         initAuth();
-    }, [login, logout, accessToken, refreshToken]);
+        // ❌ Removed refreshToken from dependencies (không còn tồn tại)
+    }, [login, logout, accessToken, updateTokens]);
 
     return null;
 };

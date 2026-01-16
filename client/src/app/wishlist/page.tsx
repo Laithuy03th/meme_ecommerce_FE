@@ -86,7 +86,7 @@ const WishlistPage = () => {
 
                                 <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
                                     <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                                        ${item.basePrice.toFixed(2)}
+                                        {item.basePrice.toLocaleString('vi-VN')}đ
                                     </span>
 
                                     <button

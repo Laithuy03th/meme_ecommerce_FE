@@ -1,13 +1,18 @@
 "use client";
 
 import { cancelOrder, getOrder, returnOrder } from "@/services/api";
-import { OrderType } from "@/types";
+import { OrderType, OrderItemType } from "@/types";
 import { ArrowLeft, CheckCircle, Clock, CreditCard, MapPin, Package } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { ORDER_STATUS, getOrderStatusColor, getOrderStatusLabel } from "@/lib/orderUtils";
+import useCartStore from "@/stores/cartStore";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import ReviewModal from "@/components/ReviewModal";
+import ReorderModal from "@/components/ReorderModal";
+import { AlertTriangle, Info, CheckCircle2, Star } from "lucide-react";
 
 const OrderDetailPage = () => {
     const params = useParams();
@@ -16,6 +21,11 @@ const OrderDetailPage = () => {
 
     const [order, setOrder] = useState<OrderType | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isReviewOpen, setIsReviewOpen] = useState(false);
+    const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
+    const [isReordering, setIsReordering] = useState(false);
+    const [reviewModalItems, setReviewModalItems] = useState<OrderItemType[]>([]);
+    const [hasReviewed, setHasReviewed] = useState(false); // Legacy - can remove if fully migrated, but keeping for safety
 
     const fetchOrder = async () => {
         try {
@@ -59,6 +69,72 @@ const OrderDetailPage = () => {
         }
     };
 
+    const { addToCart, setSelectedItems, cart } = useCartStore();
+
+    // Open Modal instead of direct add
+    const handleReOrderClick = () => {
+        setIsReorderModalOpen(true);
+    };
+
+    const handleConfirmReorder = async (selectedItems: { item: OrderItemType; quantity: number }[]) => {
+        setIsReordering(true);
+        try {
+            const newSelectedIds: number[] = [];
+
+            // 1. Add items to cart sequentially to avoid race conditions
+            for (const { item, quantity } of selectedItems) {
+                if (item.productId) {
+                    const mockProduct = { id: item.productId } as any;
+                    // Add to cart and GET THE UPDATED ITEMS
+                    const updatedItems = await addToCart(
+                        mockProduct,
+                        quantity,
+                        item.variantId,
+                        item.color,
+                        item.size
+                    );
+
+                    // 2. Find the Cart Item ID using the FRESHLY RETURNED data
+                    // This eliminates any store synchronization issues
+                    const sourceItems = updatedItems || useCartStore.getState().cart;
+
+                    // Robust matching logic:
+                    const cartItem = sourceItems.find(c =>
+                        Number(c.productId) === Number(item.productId) &&
+                        Number(c.variantId || 0) === Number(item.variantId || 0)
+                    );
+
+                    if (cartItem) {
+                        newSelectedIds.push(cartItem.id);
+                    } else {
+                        // Fallback: Try matching just by productId 
+                        const itemsWithSameProduct = sourceItems.filter(c => Number(c.productId) === Number(item.productId));
+                        if (itemsWithSameProduct.length === 1) {
+                            newSelectedIds.push(itemsWithSameProduct[0].id);
+                        }
+                    }
+                }
+            }
+
+            // 3. Set selection ONLY to these items
+            if (newSelectedIds.length > 0) {
+                setSelectedItems(newSelectedIds);
+                // 4. Force navigation to checkout address step
+                router.push("/cart?step=2");
+            } else {
+                toast.error("Could not select items for checkout");
+                router.push("/cart"); // Fallback
+            }
+
+        } catch (error) {
+            console.error("Re-order failed", error);
+            // Toast handled by addToCart
+        } finally {
+            setIsReordering(false);
+            setIsReorderModalOpen(false);
+        }
+    };
+
     if (isLoading) {
         return <div className="p-8 text-center">Loading order details...</div>;
     }
@@ -68,16 +144,32 @@ const OrderDetailPage = () => {
     }
 
     // Timeline logic (simplified based on status)
+    // Timeline logic (simplified based on status)
+    // Timeline Steps
     const steps = [
-        { status: 'PENDING', label: 'Order Placed' },
-        { status: 'PROCESSING', label: 'Processing' },
-        { status: 'SHIPPING', label: 'Shipped' },
-        { status: 'DELIVERED', label: 'Delivered' },
+        { label: 'Đặt hàng', icon: Clock },
+        { label: 'Xác nhận', icon: Package },
+        { label: 'Đang Giao', icon: MapPin },
+        { label: 'Thành công', icon: CheckCircle },
     ];
 
-    const currentStepIndex = steps.findIndex(s => s.status === order.status) !== -1
-        ? steps.findIndex(s => s.status === order.status)
-        : (order.status === 'CANCELLED' ? -1 : 0);
+    const getTimelineStep = (status: string) => {
+        switch (status) {
+            case ORDER_STATUS.PENDING: return 0;
+            case ORDER_STATUS.CONFIRMED:
+            case ORDER_STATUS.PACKED: return 1;
+            case ORDER_STATUS.SHIPPED: return 2;
+            case ORDER_STATUS.DELIVERED:
+            case ORDER_STATUS.RETURN_REQUESTED:
+            case ORDER_STATUS.RETURNED:
+            case ORDER_STATUS.REFUNDED: return 3;
+            default: return -1;
+        }
+    };
+
+    const currentStepIndex = getTimelineStep(order.status);
+    const isCancelled = order.status === ORDER_STATUS.CANCELED;
+    const isReturned = [ORDER_STATUS.RETURN_REQUESTED, ORDER_STATUS.RETURNED, ORDER_STATUS.REFUNDED].includes(order.status);
 
     return (
         <div className="space-y-8">
@@ -90,17 +182,14 @@ const OrderDetailPage = () => {
                     <p className="text-sm text-gray-500">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
                 </div>
                 <div className="ml-auto">
-                    <span className={`px-4 py-2 rounded-full text-sm font-bold ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
-                            order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
-                                'bg-blue-100 text-blue-700'
-                        }`}>
-                        {order.status}
+                    <span className={`px-4 py-2 rounded-full text-sm font-bold border ${getOrderStatusColor(order.status)}`}>
+                        {getOrderStatusLabel(order.status)}
                     </span>
                 </div>
             </div>
 
             {/* TRACKING TIMELINE */}
-            {order.status !== 'CANCELLED' && (
+            {!isCancelled && (
                 <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
                     <h3 className="font-bold text-gray-900 mb-6">Order Status</h3>
                     <div className="relative flex justify-between">
@@ -115,14 +204,20 @@ const OrderDetailPage = () => {
 
                         {steps.map((step, index) => {
                             const isCompleted = index <= currentStepIndex;
+                            const isCurrent = index === currentStepIndex;
+                            const Icon = step.icon;
+
+                            // Special color logic for Cancelled/Returned
+                            let stepColorClass = isCompleted ? "bg-primary border-primary text-white" : "bg-white border-gray-300 text-gray-300";
+                            if (isCancelled || isReturned) stepColorClass = "bg-red-100 border-red-500 text-red-500";
+
                             return (
-                                <div key={index} className="relative z-10 flex flex-col items-center gap-2 bg-gray-50 md:bg-transparent px-2">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${isCompleted ? "bg-primary border-primary text-white" : "bg-white border-gray-300 text-gray-300"
-                                        }`}>
-                                        {isCompleted ? <CheckCircle className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                                <div key={index} className="relative z-10 flex flex-col items-center gap-2 bg-gray-50 md:bg-transparent px-2" style={{ width: '25%' }}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${stepColorClass} ${isCurrent ? 'ring-4 ring-primary/20 scale-110' : ''}`}>
+                                        <Icon className="w-5 h-5" />
                                     </div>
                                     <div className="text-center">
-                                        <p className={`text-xs font-bold ${isCompleted ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
+                                        <p className={`text-xs font-bold mt-2 ${isCompleted ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
                                     </div>
                                 </div>
                             );
@@ -131,30 +226,107 @@ const OrderDetailPage = () => {
                 </div>
             )}
 
+            {/* STATUS BANNERS - SHOPEE STYLE */}
+            {order.status === ORDER_STATUS.DELIVERED && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                        <h4 className="font-bold text-emerald-800">Giao hàng thành công</h4>
+                        <p className="text-sm text-emerald-600 mt-1">
+                            Vui lòng kiểm tra hàng. Nếu có vấn đề, hãy yêu cầu <b>Trả hàng/Hoàn tiền</b> trước ngày {new Date(new Date(order.createdAt).setDate(new Date(order.createdAt).getDate() + 3)).toLocaleDateString()}.
+                            <br />Nếu bạn hài lòng, hãy bấm <b>Đánh giá</b> để nhận xu tích lũy nhé!
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {order.status === ORDER_STATUS.RETURN_REQUESTED && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3">
+                    <Info className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                        <h4 className="font-bold text-orange-800">Yêu cầu trả hàng đang được xem xét</h4>
+                        <p className="text-sm text-orange-600 mt-1">
+                            Shop đang kiểm tra yêu cầu của bạn. Vui lòng chờ phản hồi trong vòng 24-48h.
+                            Trong thời gian này, các chức năng khác sẽ bị tạm khóa.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {order.status === ORDER_STATUS.RETURNED && (
+                <div className="bg-gray-100 border border-gray-300 rounded-xl p-4 flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                        <h4 className="font-bold text-gray-800">Đã trả hàng thành công</h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                            Yêu cầu trả hàng đã được chấp thuận. Tiền sẽ được hoàn về ví/tài khoản của bạn.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+
             <div className="grid md:grid-cols-3 gap-8">
                 {/* ITEMS */}
                 <div className="md:col-span-2 space-y-6">
                     <h3 className="font-bold text-gray-900">Items</h3>
                     <div className="space-y-4">
-                        {order.items.map((item, i) => (
-                            <div key={i} className="flex gap-4 border border-gray-100 rounded-xl p-4">
-                                <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                    <Image
-                                        src={item.thumbnailUrl || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=1000"}
-                                        alt={item.productName}
-                                        fill
-                                        className="object-cover"
-                                    />
+                        {order.items?.map((item, i) => (
+                            <div key={i} className="flex gap-4 border border-gray-100 rounded-xl p-4 relative bg-white items-center">
+                                <div className="relative w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 group">
+                                    <Link href={item.productId ? `/products/${item.productId}` : '#'}>
+                                        <Image
+                                            src={item.productImageUrl || item.thumbnailUrl || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=1000"}
+                                            alt={item.productName}
+                                            fill
+                                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                    </Link>
                                 </div>
-                                <div className="flex-1">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h4 className="font-semibold text-gray-900">{item.productName}</h4>
-                                            <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                                            {item.color && <p className="text-sm text-gray-500">Color: {item.color}</p>}
-                                            {item.size && <p className="text-sm text-gray-500">Size: {item.size}</p>}
+                                <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <h4 className="font-semibold text-gray-900 line-clamp-2">
+                                            <Link href={item.productId ? `/products/${item.productId}` : '#'} className="hover:text-primary transition-colors">
+                                                {item.productName}
+                                            </Link>
+                                        </h4>
+                                        <div className="text-sm text-gray-500">
+                                            {item.variantInfo ? (
+                                                <p>{item.variantInfo}</p>
+                                            ) : (
+                                                <div className="flex gap-3">
+                                                    {item.color && <span>Màu: {item.color}</span>}
+                                                    {item.size && <span>Size: {item.size}</span>}
+                                                </div>
+                                            )}
                                         </div>
-                                        <p className="font-bold text-gray-900">${item.unitPrice.toFixed(2)}</p>
+                                        <p className="text-sm text-gray-500">x{item.quantity}</p>
+                                    </div>
+
+                                    <div className="flex flex-col items-end gap-3 min-w-[120px]">
+                                        <p className="font-bold text-gray-900 text-lg">${(item.price || item.unitPrice || 0).toFixed(2)}</p>
+
+                                        {/* PER-ITEM ACTION BUTTON */}
+                                        {order.status === ORDER_STATUS.DELIVERED && !isReturned && (
+                                            <>
+                                                {!item.hasReviewed ? (
+                                                    <button
+                                                        onClick={() => {
+                                                            setReviewModalItems([item]);
+                                                            setIsReviewOpen(true);
+                                                        }}
+                                                        className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-sm font-bold rounded-lg hover:shadow-md hover:-translate-y-0.5 transition-all shadow-orange-200 cursor-pointer flex items-center gap-1.5"
+                                                    >
+                                                        <Star className="w-3.5 h-3.5" />
+                                                        Đánh giá
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 flex items-center gap-1">
+                                                        <CheckCircle2 className="w-3.5 h-3.5" /> Đã đánh giá
+                                                    </span>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -162,21 +334,58 @@ const OrderDetailPage = () => {
                     </div>
 
                     {/* ACTIONS */}
-                    <div className="flex gap-4 pt-4">
-                        {order.status === 'PENDING' && (
+                    {/* ACTIONS */}
+                    <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-100 mt-6">
+                        {/* 1. STATE: PENDING */}
+                        {order.status === ORDER_STATUS.PENDING && (
                             <button
                                 onClick={handleCancel}
-                                className="text-red-600 font-medium hover:underline"
+                                className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-red-50 hover:text-red-600 border border-transparent hover:border-red-200 transition-all cursor-pointer"
                             >
-                                Cancel Order
+                                Hủy Đơn Hàng
                             </button>
                         )}
-                        {order.status === 'DELIVERED' && (
+
+                        {/* 2. STATE: SHIPPED */}
+                        {order.status === ORDER_STATUS.SHIPPED && (
+                            <button className="px-6 py-2.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg font-bold hover:bg-blue-100 transition-all cursor-pointer">
+                                Theo dõi đơn hàng
+                            </button>
+                        )}
+
+                        {/* 3. STATE: DELIVERED (The Buffer Zone) */}
+                        {/* 3. STATE: DELIVERED (The Buffer Zone) */}
+                        {order.status === ORDER_STATUS.DELIVERED && !isReturned && (
+                            <>
+                                {/* Return Action: Only if NO item reviewed yet */}
+                                {!order.items?.some(i => i.hasReviewed) ? (
+                                    <div className="flex flex-col gap-2 w-full md:w-auto">
+                                        <button
+                                            onClick={handleReturn}
+                                            className="w-full px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition-all cursor-pointer"
+                                        >
+                                            Yêu cầu Trả hàng / Hoàn tiền
+                                        </button>
+                                        <p className="text-xs text-gray-400 italic">
+                                            *Lưu ý: Bạn sẽ mất quyền trả hàng nếu đã đánh giá sản phẩm.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg border border-orange-100 flex items-center gap-2">
+                                        <Info className="w-4 h-4" />
+                                        Bạn đã đánh giá sản phẩm nên không thể yêu cầu trả hàng.
+                                    </p>
+                                )}
+                            </>
+                        )}
+
+                        {/* 4. STATE: Final States for Re-ordering */}
+                        {[ORDER_STATUS.CANCELED, ORDER_STATUS.RETURNED, ORDER_STATUS.REFUNDED].includes(order.status) && (
                             <button
-                                onClick={handleReturn}
-                                className="text-primary font-medium hover:underline"
+                                onClick={handleReOrderClick}
+                                className="w-full md:w-auto px-8 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark shadow-lg shadow-primary/30 transition-all cursor-pointer"
                             >
-                                Return / Refund
+                                Mua lại
                             </button>
                         )}
                     </div>
@@ -188,16 +397,16 @@ const OrderDetailPage = () => {
                         <h3 className="font-bold text-gray-900">Order Summary</h3>
                         <div className="flex justify-between text-sm text-gray-600">
                             <span>Subtotal</span>
-                            <span>${(order.totalAmount - order.shippingFee).toFixed(2)}</span>
+                            <span>${((order.totalAmount || 0) - (order.shippingFee || 0)).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm text-gray-600">
                             <span>Shipping</span>
-                            <span>${order.shippingFee.toFixed(2)}</span>
+                            <span>${(order.shippingFee || 0).toFixed(2)}</span>
                         </div>
                         <div className="h-px bg-gray-200" />
                         <div className="flex justify-between font-bold text-gray-900">
                             <span>Total</span>
-                            <span>${order.totalAmount.toFixed(2)}</span>
+                            <span>${(order.totalAmount || 0).toFixed(2)}</span>
                         </div>
                     </div>
 
@@ -229,6 +438,29 @@ const OrderDetailPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* REVIEW MODAL */}
+            <ReviewModal
+                isOpen={isReviewOpen}
+                onClose={() => setIsReviewOpen(false)}
+                items={reviewModalItems}
+                onReviewSuccess={() => {
+                    fetchOrder();
+                    setIsReviewOpen(false);
+                    toast.success("Đánh giá thành công!");
+                }}
+            />
+
+            {/* REORDER MODAL */}
+            {order.items && (
+                <ReorderModal
+                    isOpen={isReorderModalOpen}
+                    onClose={() => setIsReorderModalOpen(false)}
+                    items={order.items}
+                    onConfirm={handleConfirmReorder}
+                    isLoading={isReordering}
+                />
+            )}
         </div>
     );
 };

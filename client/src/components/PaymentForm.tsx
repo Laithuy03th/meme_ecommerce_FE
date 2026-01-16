@@ -1,8 +1,8 @@
 "use client";
 
-import { checkout } from "@/services/api";
+import { checkout, paymentApi } from "@/services/api";
 import useCartStore from "@/stores/cartStore";
-import { ArrowRight, Banknote, CreditCard, Loader2, Truck, Wallet, CheckCircle } from "lucide-react";
+import { ArrowRight, Banknote, CreditCard, Loader2, Truck, Wallet, CheckCircle, QrCode } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -14,7 +14,7 @@ interface PaymentFormProps {
   selectedItemIds?: number[];
 }
 
-type PaymentMethod = "COD" | "BANKING";
+type PaymentMethod = "COD" | "BANKING" | "VNPAY";
 
 const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormProps) => {
   const { handleSubmit } = useForm();
@@ -31,7 +31,8 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
 
     setIsProcessing(true);
     try {
-      await checkout({
+      // 1. Create Order
+      const order = await checkout({
         addressId,
         paymentMethod,
         voucherCode,
@@ -39,17 +40,35 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
         selectedItemIds,
       });
 
+      // 2. Clear Cart (optimistic)
       if (selectedItemIds && selectedItemIds.length > 0) {
         await fetchCart();
       } else {
         clearCart();
       }
 
+      // 3. Handle Payment Method
+      if (paymentMethod === "VNPAY") {
+        console.log("[PaymentForm] Selected VNPAY. Order ID:", order.id, "Total:", order.totalAmount);
+        toast.info("Redirecting to VNPAY...");
+
+        const paymentUrl = await paymentApi.createVnPayPayment(order.id, order.totalAmount);
+        console.log("[PaymentForm] Received payment URL:", paymentUrl);
+
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+        } else {
+          console.error("[PaymentForm] URL is empty, cannot redirect");
+          toast.error("Failed to get payment URL");
+          setIsProcessing(false);
+        }
+        return; // Stop here, redirecting...
+      }
+
       toast.success("Order placed successfully! 🎉");
       router.push("/account/orders");
     } catch (error: any) {
       toast.error(error.message || "Failed to place order");
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -67,10 +86,11 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
       </div>
 
       <div className="grid gap-4">
+        {/* COD */}
         <label
           className={`flex items-center gap-5 p-6 rounded-2xl border-2 cursor-pointer transition-all shadow-sm hover:shadow-lg bg-white ${paymentMethod === "COD"
-              ? "border-primary shadow-primary/10"
-              : "border-gray-100 hover:border-primary/30"
+            ? "border-primary shadow-primary/10"
+            : "border-gray-100 hover:border-primary/30"
             }`}
         >
           <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "COD" ? "border-primary bg-gradient-to-r from-primary to-secondary" : "border-gray-300"
@@ -96,10 +116,45 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
           </div>
         </label>
 
+        {/* VNPAY */}
+        <label
+          className={`flex items-center gap-5 p-6 rounded-2xl border-2 cursor-pointer transition-all shadow-sm hover:shadow-lg bg-white ${paymentMethod === "VNPAY"
+            ? "border-primary shadow-primary/10"
+            : "border-gray-100 hover:border-primary/30"
+            }`}
+        >
+          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "VNPAY" ? "border-primary bg-gradient-to-r from-primary to-secondary" : "border-gray-300"
+            }`}>
+            {paymentMethod === "VNPAY" && (
+              <CheckCircle className="w-4 h-4 text-white" />
+            )}
+          </div>
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="VNPAY"
+            checked={paymentMethod === "VNPAY"}
+            onChange={() => setPaymentMethod("VNPAY")}
+            className="hidden"
+          />
+          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden p-1">
+            {/* VNPAY Logo or Icon */}
+            <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs rounded-xl">VNPAY</div>
+          </div>
+          <div className="flex-1">
+            <span className="text-lg font-bold text-gray-900 block flex items-center gap-2">
+              VNPAY e-Wallet / QR
+              <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">HOT</span>
+            </span>
+            <span className="text-sm text-gray-500 mt-1">Scan QR code or use VNPAY app</span>
+          </div>
+        </label>
+
+        {/* BANKING */}
         <label
           className={`flex items-center gap-5 p-6 rounded-2xl border-2 cursor-pointer transition-all shadow-sm hover:shadow-lg bg-white ${paymentMethod === "BANKING"
-              ? "border-primary shadow-primary/10"
-              : "border-gray-100 hover:border-primary/30"
+            ? "border-primary shadow-primary/10"
+            : "border-gray-100 hover:border-primary/30"
             }`}
         >
           <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${paymentMethod === "BANKING" ? "border-primary bg-gradient-to-r from-primary to-secondary" : "border-gray-300"
@@ -121,7 +176,7 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
           </div>
           <div className="flex-1">
             <span className="text-lg font-bold text-gray-900 block">Bank Transfer</span>
-            <span className="text-sm text-gray-500 mt-1">Transfer via QR Code or Mobile Banking App</span>
+            <span className="text-sm text-gray-500 mt-1">Transfer via Mobile Banking App</span>
           </div>
         </label>
       </div>
@@ -162,11 +217,11 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
         {isProcessing ? (
           <>
             <Loader2 className="w-6 h-6 animate-spin" />
-            Processing Order...
+            {paymentMethod === "VNPAY" ? "Redirecting to VNPAY..." : "Processing Order..."}
           </>
         ) : (
           <>
-            Place Order
+            {paymentMethod === "VNPAY" ? "Pay with VNPAY" : "Place Order"}
             <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </>
         )}

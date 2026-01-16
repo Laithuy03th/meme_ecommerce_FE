@@ -1,7 +1,7 @@
 "use client";
 
 import Image, { ImageProps } from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getSafeImageUrl } from "@/lib/imageUtils";
 
 interface SafeImageProps extends Omit<ImageProps, 'src' | 'onError'> {
@@ -28,6 +28,13 @@ const SafeImage = ({
     const initialSrc = getSafeImageUrl(src, productId, productName);
     const [imgSrc, setImgSrc] = useState<string>(initialSrc);
     const [hasError, setHasError] = useState(false);
+
+    // Update internal state when prop src changes
+    useEffect(() => {
+        const newSrc = getSafeImageUrl(src, productId, productName);
+        setImgSrc(newSrc);
+        setHasError(false);
+    }, [src, productId, productName]);
 
     // Handle image load error
     const handleError = () => {

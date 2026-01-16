@@ -23,7 +23,7 @@ const ProductCard = ({ product }: { product: ProductType }) => {
   const mainImage = getSafeImageUrl(
     product.thumbnailUrl || product.image,
     product.id,
-    product.name
+    product.name,
   );
   const [currentImage, setCurrentImage] = useState(mainImage);
 
@@ -151,13 +151,20 @@ const ProductCard = ({ product }: { product: ProductType }) => {
           <div className="flex items-center gap-2 mb-3">
             <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              <span className="text-xs font-bold text-amber-700">{product.rating || 4.5}</span>
+              <span className="text-xs font-bold text-amber-700">{product.rating ? product.rating.toFixed(1) : "New"}</span>
             </div>
-            <span className="text-xs text-slate-400">({product.reviews || 128} reviews)</span>
+            {product.soldCount !== undefined && product.soldCount > 0 && (
+              <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">Sold {product.soldCount}</span>
+            )}
+            {product.stockStatus !== "IN_STOCK" && (
+              <span className="text-xs font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md block ml-auto">
+                {product.stockStatus === "OUT_OF_STOCK" ? "Out of Stock" : "Low Stock"}
+              </span>
+            )}
           </div>
 
           <p className="text-sm text-slate-500 line-clamp-2 mb-4 h-10 leading-relaxed">
-            {product.description || product.shortDescription || "Experience premium quality with our latest collection."}
+            {product.shortDesc || product.description || "Experience premium quality with our latest collection."}
           </p>
 
           <div className="mt-auto flex items-end justify-between">
@@ -165,11 +172,11 @@ const ProductCard = ({ product }: { product: ProductType }) => {
               <span className="text-xs text-slate-400 font-medium mb-0.5">Price</span>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors">
-                  ${product.price.toFixed(2)}
+                  {product.price.toLocaleString('vi-VN')}đ
                 </span>
                 {product.originalPrice && (
                   <span className="text-sm text-slate-400 line-through decoration-slate-300">
-                    ${product.originalPrice.toFixed(2)}
+                    {product.originalPrice.toLocaleString('vi-VN')}đ
                   </span>
                 )}
               </div>

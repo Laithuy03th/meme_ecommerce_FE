@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { forgotPassword } from "@/services/api/authApi";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
@@ -11,12 +12,19 @@ const ForgotPasswordPage = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        // Mock api call
-        setTimeout(() => {
-            setIsLoading(false);
+
+        const formData = new FormData(e.target as HTMLFormElement);
+        const email = formData.get("email") as string;
+
+        try {
+            await forgotPassword(email);
             setIsSent(true);
             toast.success("Reset link sent to your email!");
-        }, 1000);
+        } catch (error: any) {
+            toast.error(error.message || "Failed to send reset link");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

@@ -34,34 +34,48 @@ export type ProductType = {
   name: string;
   slug: string;
   thumbnailUrl: string;
-  price: number;
-  basePrice?: number;
+  price: number; // Used in list view
+  basePrice?: number; // Used in detail view
   categorySlug?: string;
   categoryName?: string;
+
+  brand?: string | null;
+  averageRating?: number | null;
+  reviewCount?: number;
+  soldCount?: number;
+  stockStatus?: "IN_STOCK" | "OUT_OF_STOCK" | "LOW_STOCK";
+  isFeatured?: boolean | null;
+  discountPercent?: number | null;
+
   createdAt?: string;
   updatedAt?: string;
   status?: string;
 
-  description?: string;
+  description?: string; // UI alias
   shortDesc?: string;
   longDesc?: string;
-  shortDescription?: string;
 
-  rating?: number;
-  reviews?: number;
+  rating?: number; // UI alias
+  reviews?: number; // UI alias
 
-  images?: string[];
-  productImages?: ProductImageType[];
-  image?: string;
+  images?: { id: number; imageUrl: string; thumbnail: boolean; sortOrder: number }[] | string[];
+  image?: string; // UI alias for thumbnailUrl
 
-  isNew?: boolean;
-  isSale?: boolean;
+  isNew?: boolean; // Derived or optional
+  isSale?: boolean; // Derived or optional
   originalPrice?: number;
 
-  colors?: string[];
-  sizes?: string[];
-  variantImages?: Record<string, string>;
+  startRating?: number; // for review summary
+
+  colors?: string[]; // UI helper
+  sizes?: string[]; // UI helper
+  variantImages?: Record<string, string>; // UI helper
   variants?: ProductVariantType[];
+
+  weight?: number;
+  stockQuantity?: number;
+  viewCount?: number;
+  videoUrl?: string | null;
 };
 
 export type SearchKeywordSuggestion = {
@@ -154,7 +168,7 @@ export type CartStoreStateType = {
 
 export type CartStoreActionsType = {
   fetchCart: () => Promise<void>;
-  addToCart: (product: ProductType, quantity: number, variantId?: number, color?: string, size?: string) => Promise<void>;
+  addToCart: (product: ProductType, quantity: number, variantId?: number, color?: string, size?: string) => Promise<CartItemType[] | null>;
   updateCartItem: (itemId: number, quantity: number) => Promise<void>;
   removeFromCart: (itemId: number) => Promise<void>;
   clearCart: () => void;
@@ -172,11 +186,18 @@ export type UserType = {
   fullName: string;
   phone: string;
   roles: string[];
+  avatarUrl?: string; // New
+  memberSince?: string; // New
+  totalOrders?: number; // New
+  totalSpent?: number; // New
+  membershipLevel?: string; // New
+  verified?: boolean; // New
+  gender?: string; // New
+  dateOfBirth?: string; // New
 };
 
 export type LoginResponse = {
   accessToken: string;
-  // ❌ REMOVED: refreshToken - giờ ở HttpOnly Cookie, không trả trong JSON
   tokenType: string | null;
   user: UserType;
 };
@@ -225,16 +246,20 @@ export type VoucherValidationResponse = {
 // --- ORDER TYPES ---
 export type OrderItemType = {
   id: number;
-  productId: number;
+  productId?: number;
   variantId?: number;
   productName: string;
-  productSlug: string;
-  thumbnailUrl: string;
-  color?: string;
-  size?: string;
-  unitPrice: number;
+  productSlug?: string;
+  thumbnailUrl?: string;     // Legacy
+  productImageUrl?: string;  // New API
+  color?: string;            // Legacy
+  size?: string;             // Legacy
+  variantInfo?: string;      // New API
+  unitPrice?: number;        // Legacy
+  price?: number;            // New API
   quantity: number;
-  totalPrice: number;
+  totalPrice?: number;
+  hasReviewed?: boolean; // New field for per-item review tracking
 };
 
 export type OrderTimelineType = {
@@ -271,4 +296,31 @@ export type WishlistItemType = {
   thumbnailUrl: string;
   basePrice: number;
   createdAt: string;
+};
+
+// --- REVIEW TYPES ---
+export type ReviewType = {
+  id: number;
+  userFullName: string;
+  productId: number;        // BE returns this
+  productName: string;      // BE returns this
+  productImage: string;     // BE returns this (note: productImage, not productImageUrl)
+  rating: number;
+  comment: string;
+  createdAt: string;
+  imageUrl?: string;
+  adminReply?: string;
+  adminRepliedAt?: string;
+  user?: { // Frontend often maps this sometimes
+    id?: number;
+    fullName?: string;
+    avatarUrl?: string;
+  };
+};
+
+export type ReviewSummaryType = {
+  productId: number;
+  averageRating: number;
+  totalReviews: number;
+  starCounts: Record<string, number>;
 };

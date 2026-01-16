@@ -11,12 +11,12 @@ const ProductView = ({
     product,
     initialSize,
     initialColor,
-    reviewsCount,
+    reviewCount,
 }: {
     product: ProductType;
     initialSize: string;
     initialColor: string;
-    reviewsCount: number;
+    reviewCount: number;
 }) => {
     const [selectedColor, setSelectedColor] = useState(initialColor);
 
@@ -36,7 +36,6 @@ const ProductView = ({
     }, [selectedColor, product, safeMainImage]);
 
     const averageRating = product.rating || 4.5;
-
     return (
         <div className="flex flex-col lg:flex-row gap-12 mb-16">
             {/* IMAGE GALLERY */}
@@ -107,21 +106,21 @@ const ProductView = ({
                             </div>
                             <span className="text-lg font-bold text-gray-900">{averageRating}</span>
                         </div>
-                        <span className="text-gray-600 font-medium">({reviewsCount} reviews)</span>
+                        <span className="text-gray-600 font-medium">({reviewCount} reviews)</span>
                     </div>
 
                     <div className="flex items-baseline gap-4 mb-6">
                         <h2 className="text-5xl font-black">
                             <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-                                ${product.price.toFixed(2)}
+                                {product.price.toLocaleString('vi-VN')}đ
                             </span>
                         </h2>
                         {product.originalPrice && (
-                            <span className="text-2xl text-gray-400 line-through">${product.originalPrice.toFixed(2)}</span>
+                            <span className="text-2xl text-gray-400 line-through">{product.originalPrice.toLocaleString('vi-VN')}đ</span>
                         )}
                         {product.isSale && (
                             <span className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
-                                Save ${(product.originalPrice! - product.price).toFixed(2)}
+                                Giảm {((product.originalPrice! - product.price)).toLocaleString('vi-VN')}đ
                             </span>
                         )}
                     </div>
@@ -146,7 +145,7 @@ const ProductView = ({
                         </div>
                         <div>
                             <span className="text-sm font-bold text-gray-900 block">Free Shipping</span>
-                            <span className="text-xs text-gray-500">On orders $50+</span>
+                            <span className="text-xs text-gray-500">On orders 50.000 đ</span>
                         </div>
                     </div>
                     <div className="flex flex-col items-center text-center gap-3 p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-primary/30 transition-all group">

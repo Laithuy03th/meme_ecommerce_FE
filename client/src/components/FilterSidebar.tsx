@@ -65,12 +65,11 @@ const FilterSidebar = ({ categories }: FilterSidebarProps) => {
                 <h3 className="font-semibold text-gray-900 mb-4">Price Range</h3>
                 <div className="space-y-2">
                     {[
-                        { label: "All Prices", min: "", max: "" },
-                        { label: "Under $50", min: "", max: "50" },
-                        { label: "$50 - $100", min: "50", max: "100" },
-                        { label: "$100 - $200", min: "100", max: "200" },
-                        { label: "$200 - $300", min: "200", max: "300" },
-                        { label: "Over $300", min: "300", max: "" }
+                        { label: "Tất cả giá", min: "", max: "" },
+                        { label: "Dưới 400.000 đ", min: "", max: "400000" },
+                        { label: "400.000 đ - 1.000.000 đ", min: "400000", max: "1000000" },
+                        { label: "1.000.000 đ - 4.000.000 đ", min: "1000000", max: "4000000" },
+                        { label: "Trên 4.000.000 đ", min: "4000000", max: "" }
                     ].map((range, index) => {
                         const isSelected =
                             (range.min === "" && range.max === "" && !searchParams.get("minPrice") && !searchParams.get("maxPrice")) ||
@@ -101,23 +100,6 @@ const FilterSidebar = ({ categories }: FilterSidebarProps) => {
                             </label>
                         );
                     })}
-                </div>
-            </div>
-
-            {/* Colors (Hardcoded for now as API doesn't provide global colors list yet) */}
-            <div>
-                <h3 className="font-semibold text-gray-900 mb-4">Colors</h3>
-                <div className="flex flex-wrap gap-2">
-                    {['black', 'white', 'blue', 'red', 'green', 'yellow', 'purple'].map((color) => (
-                        <button
-                            key={color}
-                            className={`w-6 h-6 rounded-full border border-gray-200 shadow-sm hover:scale-110 transition-transform ${searchParams.get('color') === color ? 'ring-2 ring-primary ring-offset-2' : ''
-                                }`}
-                            style={{ backgroundColor: color }}
-                            onClick={() => handleFilterChange('color', searchParams.get('color') === color ? "" : color)}
-                            title={color}
-                        />
-                    ))}
                 </div>
             </div>
         </div>

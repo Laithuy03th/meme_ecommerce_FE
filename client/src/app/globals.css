@@ -150,7 +150,48 @@ body {
 }
 
 /* Smooth Scrolling */
-/* Smooth Scrolling */
 html {
   scroll-behavior: smooth;
+}
+
+/* Global Cursor Pointer for Interactive Elements */
+button,
+[role="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="button"],
+label,
+select,
+summary {
+  cursor: pointer;
+}
+
+/* Ensure disabled elements don't show pointer */
+button:disabled,
+input:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* TOAST POPUP CENTER override */
+.Toastify__toast-container--top-center {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: auto !important;
+  max-width: 90vw !important;
+  z-index: 99999 !important;
+}
+
+.Toastify__toast {
+  border-radius: 16px !important;
+  padding: 16px 24px !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  text-align: center !important;
+}
+
+.Toastify__toast-body {
+  gap: 12px;
 }

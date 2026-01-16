@@ -25,9 +25,9 @@ const LoginForm = () => {
 
         try {
             const data = await apiLogin({ email, password });
-            // ✅ Refresh token tự động lưu trong HttpOnly Cookie, không cần truyền vào
+            // Refresh token tự động lưu trong HttpOnly Cookie, không cần truyền vào
             login(data.user, data.accessToken);
-            toast.success("Welcome back! 👋");
+            toast.success("Welcome back!");
             router.push(redirect || "/");
         } catch (error: any) {
             toast.error(error.message || "Invalid email or password");

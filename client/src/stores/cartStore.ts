@@ -41,7 +41,7 @@ const useCartStore = create<CartStoreStateType & CartStoreActionsType>()(
         const isAuthenticated = useAuthStore.getState().isAuthenticated;
         if (!isAuthenticated) {
           toast.error("Please login to add items to cart");
-          return;
+          return null;
         }
 
         set({ isLoading: true });
@@ -58,12 +58,14 @@ const useCartStore = create<CartStoreStateType & CartStoreActionsType>()(
             totalItems: cartData.totalItems,
           });
           toast.success("Added to cart!");
+          return cartData.items; // RETURN THE UPDATED ITEMS
         } catch (error: any) {
           console.error("Failed to add to cart:", error);
           const message = error.message === "Failed to fetch"
             ? "Network error. Please check if backend is running."
             : (error.message || "Failed to add to cart");
           toast.error(message);
+          return null;
         } finally {
           set({ isLoading: false });
         }

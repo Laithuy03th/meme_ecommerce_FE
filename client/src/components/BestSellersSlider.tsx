@@ -94,7 +94,7 @@ const BestSellersSlider = ({ products }: BestSellersSliderProps) => {
                                     </h3>
                                     <div className="flex items-center justify-between">
                                         <span className="text-2xl font-bold">
-                                            ${product.price.toFixed(2)}
+                                            {product.price.toLocaleString('vi-VN')}đ
                                         </span>
                                         <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                             <ArrowRight className="w-6 h-6" />

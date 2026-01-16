@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import SearchBar from "./SearchBar";
-import { Heart, Menu } from "lucide-react";
+import { Heart, Menu, MessageCircle } from "lucide-react";
 import ShoppingCartIcon from "./ShoppingCartIcon";
 import ProfileDropdown from "./ProfileDropdown";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,7 +10,12 @@ import useWishlistStore from "@/stores/wishlistStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useEffect, useState } from "react";
 
-const Navbar = () => {
+interface NavbarProps {
+  isChatOpen: boolean;
+  onChatToggle: (open: boolean) => void;
+}
+
+const Navbar = ({ isChatOpen, onChatToggle }: NavbarProps) => {
   const pathname = usePathname();
   const router = useRouter();
   const { wishlist } = useWishlistStore();
@@ -32,6 +37,7 @@ const Navbar = () => {
     { name: "Home", href: "/" },
     { name: "Shop", href: "/products" },
     { name: "Categories", href: "/categories" },
+    { name: "Vouchers", href: "/vouchers" },
     { name: "About", href: "/about" },
   ];
 
@@ -93,6 +99,15 @@ const Navbar = () => {
               <div className="hover:scale-105 transition-transform duration-300">
                 <ShoppingCartIcon />
               </div>
+
+              {/* Chat Icon */}
+              <button
+                onClick={() => onChatToggle(!isChatOpen)}
+                className="relative p-2.5 rounded-full hover:bg-white/80 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 group border border-transparent hover:border-purple-100"
+              >
+                <MessageCircle className="w-5 h-5 text-slate-600 group-hover:text-purple-500 transition-colors" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full shadow-sm"></span>
+              </button>
 
               <div className="pl-2 border-l border-slate-200">
                 <ProfileDropdown />

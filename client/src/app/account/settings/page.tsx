@@ -1,8 +1,46 @@
 "use client";
 
-import { Shield, Bell } from "lucide-react";
+import { Shield, Bell, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "react-toastify";
+import { changePassword } from "@/services/api/authApi";
+import { useAuthStore } from "@/stores/authStore";
 
 const SettingsPage = () => {
+    const { accessToken } = useAuthStore();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handlePasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!accessToken) {
+            toast.error("You must be logged in to change password");
+            return;
+        }
+
+        setIsLoading(true);
+        const formData = new FormData(e.target as HTMLFormElement);
+        const oldPassword = formData.get("oldPassword") as string;
+        const newPassword = formData.get("newPassword") as string;
+        const confirmPassword = formData.get("confirmPassword") as string;
+
+        if (newPassword !== confirmPassword) {
+            toast.error("New passwords do not match");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            await changePassword({ oldPassword, newPassword }, accessToken);
+            toast.success("Password updated successfully");
+            (e.target as HTMLFormElement).reset();
+        } catch (error: any) {
+            toast.error(error.message || "Failed to update password");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="space-y-8">
             <div className="border-b border-gray-100 pb-6">
@@ -19,27 +57,52 @@ const SettingsPage = () => {
                 <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm space-y-6">
                     <div className="space-y-4">
                         <h4 className="font-medium text-gray-900">Change Password</h4>
-                        <div className="grid gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Current Password</label>
-                                <input type="password" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="••••••••" />
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-4">
+                        <form onSubmit={handlePasswordChange}>
+                            <div className="grid gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
-                                    <input type="password" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="••••••••" />
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Current Password</label>
+                                    <input
+                                        name="oldPassword"
+                                        type="password"
+                                        required
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                        placeholder="••••••••"
+                                    />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
-                                    <input type="password" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="••••••••" />
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
+                                        <input
+                                            name="newPassword"
+                                            type="password"
+                                            required
+                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                            placeholder="••••••••"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
+                                        <input
+                                            name="confirmPassword"
+                                            type="password"
+                                            required
+                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                                            placeholder="••••••••"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="flex justify-end">
-                            <button className="bg-gray-900 text-white px-6 py-2.5 rounded-xl hover:bg-gray-800 transition-colors">
-                                Update Password
-                            </button>
-                        </div>
+                            <div className="flex justify-end mt-4">
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="bg-gray-900 text-white px-6 py-2.5 rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-70 flex items-center gap-2"
+                                >
+                                    {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    Update Password
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </section>

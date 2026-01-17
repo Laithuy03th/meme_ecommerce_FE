@@ -106,16 +106,13 @@ const AppSidebar = ({ user }: { user: any }) => {
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
-      // Call API logout (clears refreshToken cookie)
+      // Call API logout (Backend clears refreshToken cookie at path /admin)
       await logout(token || undefined);
 
       // Clear Client Storage
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
-
-        // Clear Server Component Cookie
-        document.cookie = "accessToken=; path=/; max-age=0; SameSite=Lax";
       }
 
       toast.success("Đăng xuất thành công");
@@ -126,7 +123,6 @@ const AppSidebar = ({ user }: { user: any }) => {
       if (typeof window !== "undefined") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
-        document.cookie = "accessToken=; path=/; max-age=0; SameSite=Lax";
         window.location.href = "/login";
       }
     }

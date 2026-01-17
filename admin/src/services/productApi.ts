@@ -15,11 +15,11 @@ export const productApi = {
     },
 
     /**
-     * GET /api/v1/admin/products/{id}
+     * GET /api/v1/products/{id}
      * Get product detail
      */
     async getById(id: number): Promise<Product> {
-        return authenticatedFetch<Product>(`/admin/products/${id}`);
+        return authenticatedFetch<Product>(`/products/${id}`);
     },
 
     /**
@@ -39,6 +39,17 @@ export const productApi = {
      */
     async update(id: number, data: Partial<CreateProductRequest>): Promise<Product> {
         return authenticatedFetch<Product>(`/admin/products/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
+    /**
+     * PUT /api/v1/admin/products/variants/{variantId}
+     * Update variant (stock/price)
+     */
+    async updateVariant(variantId: number, data: Partial<{ price: number; stock: number }>): Promise<void> {
+        return authenticatedFetch<void>(`/admin/products/variants/${variantId}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         });

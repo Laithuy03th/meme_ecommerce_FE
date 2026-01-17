@@ -282,11 +282,41 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                     name="thumbnailUrl"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Thumbnail URL *</FormLabel>
+                                            <FormLabel>Thumbnail Image *</FormLabel>
                                             <FormControl>
-                                                <Input {...field} type="url" placeholder="https://example.com/image.jpg" />
+                                                <div className="space-y-2">
+                                                    <Input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                try {
+                                                                    // Using fileApi defined in services
+                                                                    const { fileApi } = await import("@/services/fileApi");
+                                                                    const res = await fileApi.uploadImage(file);
+                                                                    field.onChange(res.fileUrl);
+                                                                } catch (error) {
+                                                                    console.error("Upload failed", error);
+                                                                    alert("Upload failed");
+                                                                }
+                                                            }
+                                                        }}
+                                                    />
+                                                    {field.value && (
+                                                        <div className="relative w-32 h-32 mt-2 border rounded-md overflow-hidden">
+                                                            <img
+                                                                src={field.value}
+                                                                alt="Thumbnail preview"
+                                                                className="object-cover w-full h-full"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    {/* Hidden input to store the URL if needed explicitly, but field.value tracks it */}
+                                                    <Input {...field} className="hidden" />
+                                                </div>
                                             </FormControl>
-                                            <FormDescription>Main product image</FormDescription>
+                                            <FormDescription>Upload main product image</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}

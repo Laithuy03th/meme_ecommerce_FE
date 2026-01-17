@@ -47,15 +47,19 @@ export const updateProfile = async (data: Partial<UserType>): Promise<UserType> 
  * Login API - Refresh token sẽ được set vào HttpOnly Cookie tự động
  * Frontend chỉ nhận accessToken và user trong response
  */
-export const login = async (data: { email: string; password: string }): Promise<LoginResponse> => {
-    const res = await fetch(`${BASE_URL}/auth/login`, {
+export const loginFullResponse = async (data: { email: string; password: string }): Promise<Response> => {
+    return fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
-        credentials: 'include', // Quan trọng: để browser nhận/gửi cookie
+        credentials: 'include',
         headers: {
             "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
     });
+};
+
+export const login = async (data: { email: string; password: string }): Promise<LoginResponse> => {
+    const res = await loginFullResponse(data);
 
     if (!res.ok) {
         const errorData = await res.json();
@@ -82,26 +86,7 @@ export const register = async (data: { email: string; password: string; fullName
     return res.json();
 };
 
-/**
- * Refresh Token API - Đọc refresh token từ HttpOnly Cookie
- * KHÔNG cần gửi refresh token trong body nữa
- */
-export const refreshToken = async (): Promise<LoginResponse> => {
-    const res = await fetch(`${BASE_URL}/auth/refresh`, {
-        method: "POST",
-        credentials: 'include', // ✅ Quan trọng: browser tự gửi cookie
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: "", // ❌ KHÔNG gửi body nữa, refresh token ở cookie, nhưng fetch POST cần body k trống trong 1 số trường hợp, nhưng ở đây curl để trống
-    });
-
-    if (!res.ok) {
-        throw new Error("Failed to refresh token");
-    }
-
-    return res.json();
-};
+// refreshToken is now handled internally in api.ts to avoid circular dependency
 
 /**
  * Logout API - Xóa refresh token cookie

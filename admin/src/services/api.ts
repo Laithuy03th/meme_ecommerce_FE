@@ -1,4 +1,5 @@
-import { refreshToken } from "./authApi";
+// import { refreshToken } from "./authApi"; // Removed to fix circular dependency
+
 
 export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
@@ -27,6 +28,26 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 };
 
 /**
+ * Refresh Token API - Internal use only to avoid circular dependency
+ */
+const refreshToken = async (): Promise<{ accessToken: string; user?: any }> => {
+    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+        method: "POST",
+        credentials: 'include',
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: "",
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to refresh token");
+    }
+
+    return res.json();
+};
+
+/**
  * Helper to check and limit running one refresh token request at a time
  */
 const performRefreshToken = async (): Promise<string> => {
@@ -39,7 +60,7 @@ const performRefreshToken = async (): Promise<string> => {
     isRefreshing = true;
 
     try {
-        // Call refresh API from authApi
+        // Call refresh API
         const refreshResponse = await refreshToken();
 
         if (!refreshResponse || !refreshResponse.accessToken) {

@@ -53,29 +53,29 @@ const Homepage = () => {
     {
       title: "Total Revenue",
       value: `${(stats.totalRevenue ?? 0).toLocaleString()}đ`,
-      subValue: `Today: ${(stats.todayRevenue ?? 0).toLocaleString()}đ`,
+      subValue: stats.todayRevenue ? `Today: ${(stats.todayRevenue).toLocaleString()}đ` : "Tổng doanh thu",
       icon: DollarSign,
       bgColor: "bg-emerald-500",
     },
     {
       title: "Total Orders",
       value: (stats.totalOrders ?? 0).toString(),
-      subValue: `Pending: ${stats.pendingOrders ?? 0}`,
+      subValue: stats.pendingOrders ? `Pending: ${stats.pendingOrders}` : "Tổng đơn hàng",
       icon: ShoppingCart,
       bgColor: "bg-blue-500",
     },
     {
-      title: "Total Customers",
-      value: (stats.totalCustomers ?? 0).toString(),
-      subValue: `New this month: ${stats.newCustomersThisMonth ?? 0}`,
+      title: "Total Users",
+      value: (stats.totalUsers ?? stats.totalCustomers ?? 0).toString(),
+      subValue: stats.newCustomersThisMonth ? `New this month: ${stats.newCustomersThisMonth}` : "Tổng người dùng",
       icon: Users,
       bgColor: "bg-purple-500",
     },
     {
-      title: "Low Stock Products",
-      value: stats.lowStockProducts.toString(),
-      subValue: `Total products: ${stats.totalProducts}`,
-      icon: AlertTriangle,
+      title: "Total Products",
+      value: (stats.totalProducts ?? 0).toString(),
+      subValue: stats.lowStockProducts ? `Low Stock: ${stats.lowStockProducts}` : "Tổng sản phẩm",
+      icon: Package,
       bgColor: "bg-amber-500",
     },
   ];
@@ -112,67 +112,71 @@ const Homepage = () => {
         ))}
       </div>
 
-      {/* Order Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingOrders}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Shipping</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.shippingOrders}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">{stats.completedOrders}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Canceled</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{stats.canceledOrders}</div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Order Stats - Only show if data exists */}
+      {(stats.pendingOrders !== undefined || stats.shippingOrders !== undefined) && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.pendingOrders ?? 0}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Shipping</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.shippingOrders ?? 0}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-600">{stats.completedOrders ?? 0}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Canceled</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">{stats.canceledOrders ?? 0}</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-      {/* Top Selling Products */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Top Selling Products</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {stats.topSellingProducts.map((product) => (
-              <div key={product.productId} className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{product.productName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Sold: {product.totalSold} units
-                  </p>
+      {/* Top Selling Products - Only show if data exists */}
+      {stats.topSellingProducts && stats.topSellingProducts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Selling Products</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats.topSellingProducts.map((product) => (
+                <div key={product.productId} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{product.productName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Sold: {product.totalSold} units
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">{product.revenue.toLocaleString()}đ</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold">{product.revenue.toLocaleString()}đ</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Charts Grid */}
+      {/* Charts Grid - Keep them for layout but they might be empty/mocked if no data */}
       <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-4">
         <div className="bg-primary-foreground p-4 rounded-lg lg:col-span-2 xl:col-span-1 2xl:col-span-2">
           <AppBarChart />

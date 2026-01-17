@@ -56,4 +56,14 @@ export const voucherApi = {
         });
     },
 
+    /**
+     * PATCH /api/v1/admin/vouchers/{id}/toggle
+     * Toggle voucher status
+     */
+    async toggle(id: number): Promise<Voucher> {
+        return authenticatedFetch<Voucher>(`/admin/vouchers/${id}/toggle`, {
+            method: 'PATCH',
+        });
+    },
+
 };

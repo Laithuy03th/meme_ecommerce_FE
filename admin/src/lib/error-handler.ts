@@ -1,16 +1,5 @@
 import { toast } from "sonner";
-
-export class ApiError extends Error {
-    constructor(
-        public status: number,
-        public error: string,
-        message: string,
-        public path?: string
-    ) {
-        super(message);
-        this.name = 'ApiError';
-    }
-}
+import { ApiError } from "@/services/api";
 
 export function handleApiError(error: unknown) {
     console.error('API Error:', error);
@@ -32,9 +21,9 @@ export function handleApiError(error: unknown) {
         } else if (message.includes('Cannot change your own status')) {
             toast.error('Không thể thay đổi trạng thái của chính mình');
         } else if (error.status === 403) {
-            toast.error('Bạn không có quyền thực hiện hành động này');
+            toast.error('Không có quyền Admin');
         } else if (error.status === 404) {
-            toast.error('Không tìm thấy dữ liệu', { description: error.path });
+            toast.error('Không tìm thấy dữ liệu', { description: (error as any).path });
         } else {
             toast.error(message || 'Đã có lỗi xảy ra');
         }

@@ -2,12 +2,12 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/a
 
 export const fileApi = {
     /**
-     * POST /api/v1/admin/files/upload
+     * POST /api/v1/files/upload
      * Upload image file
      * 
-     * @returns { url: string } - Uploaded file URL
+     * @returns { fileUrl: string } - Uploaded file URL
      */
-    async uploadImage(file: File): Promise<{ url: string }> {
+    async uploadImage(file: File): Promise<{ fileUrl: string }> {
         const formData = new FormData();
         formData.append('file', file);
 
@@ -17,7 +17,7 @@ export const fileApi = {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch(`${API_BASE_URL}/admin/files/upload`, {
+        const response = await fetch(`${API_BASE_URL}/files/upload`, {
             method: 'POST',
             body: formData, // Don't set Content-Type, browser will set multipart/form-data
             headers: headers, // Add headers

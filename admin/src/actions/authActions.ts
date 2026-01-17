@@ -1,6 +1,6 @@
 "use server";
 
-import { login } from "@/services/authApi";
+import { loginFullResponse } from "@/services/authApi";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -13,7 +13,13 @@ export async function loginAction(prevState: any, formData: FormData) {
     }
 
     try {
-        const response = await login({ email, password });
+        const response = await loginFullResponse({ email, password });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Login failed");
+        }
+
         const data = await response.json();
 
         // Check if user is ADMIN

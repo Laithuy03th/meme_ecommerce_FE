@@ -23,9 +23,10 @@ export default function LoginPage() {
         try {
             const data = await login({ email, password });
 
+            // Backend automatically sets refreshToken cookie with path=/admin
+            // We only need to store accessToken in localStorage
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("user", JSON.stringify(data.user));
-            document.cookie = `accessToken=${data.accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
 
             toast.success("Đăng nhập thành công!");
 
@@ -35,7 +36,6 @@ export default function LoginPage() {
                 toast.error("Bạn không có quyền truy cập Admin!");
                 localStorage.removeItem("accessToken");
                 localStorage.removeItem("user");
-                document.cookie = "accessToken=; path=/; max-age=0; SameSite=Lax";
             }
         } catch (error: any) {
             console.error(error);

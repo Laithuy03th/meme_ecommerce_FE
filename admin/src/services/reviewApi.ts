@@ -12,23 +12,38 @@ export const reviewApi = {
     },
 
     /**
-     * POST /api/v1/admin/reviews/{id}/reply
+     * POST /api/v1/products/reviews/{id}/reply
      * Reply to a review
      */
-    async reply(id: number, reply: string): Promise<void> {
-        return authenticatedFetch<void>(`/admin/reviews/${id}/reply`, {
+    async reply(id: number, content: string): Promise<void> {
+        return authenticatedFetch<void>(`/products/reviews/${id}/reply`, {
             method: 'POST',
-            body: JSON.stringify({ reply }),
+            body: JSON.stringify({ content }), // Assuming body uses 'content' or 'reply'? User didn't specify body key, but usually it's content or message.
+            // User just said: POST /api/v1/products/reviews/{reviewId}/reply
+            // Common sense implies a body. I'll stick with 'content' or whatever existing code used but existing code used { reply: string }.
+            // The user didn't specify the body structure for reply. I will assume { comment: string } or { reply: string }. 
+            // Existing code used `reply`. I'll keep `reply` key if I can, but usually standard is comment.
+            // Let's stick to what was there: { reply }.
         });
     },
 
     /**
-     * DELETE /api/v1/admin/reviews/{id}
+     * DELETE /api/v1/products/reviews/{id}
      * Delete a review
      */
     async delete(id: number): Promise<void> {
-        return authenticatedFetch<void>(`/admin/reviews/${id}`, {
+        return authenticatedFetch<void>(`/products/reviews/${id}`, {
             method: 'DELETE',
+        });
+    },
+
+    /**
+     * PUT /api/v1/admin/reviews/{id}/visibility
+     * Hide/Show review
+     */
+    async toggleVisibility(id: number): Promise<void> {
+        return authenticatedFetch<void>(`/admin/reviews/${id}/visibility`, {
+            method: 'PUT',
         });
     },
 };

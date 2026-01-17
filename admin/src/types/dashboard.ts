@@ -1,17 +1,20 @@
 export interface DashboardStats {
     totalRevenue: number;
-    todayRevenue: number;
-    monthRevenue: number;
     totalOrders: number;
-    pendingOrders: number;
-    shippingOrders: number;
-    completedOrders: number;
-    canceledOrders: number;
-    totalCustomers: number;
-    newCustomersThisMonth: number;
     totalProducts: number;
-    lowStockProducts: number;
-    topSellingProducts: TopProduct[];
+    totalUsers: number;
+
+    // Optional fields (might not be in the simple stats API)
+    todayRevenue?: number;
+    monthRevenue?: number;
+    pendingOrders?: number;
+    shippingOrders?: number;
+    completedOrders?: number;
+    canceledOrders?: number;
+    totalCustomers?: number; // Deprecated or alias for totalUsers
+    newCustomersThisMonth?: number;
+    lowStockProducts?: number;
+    topSellingProducts?: TopProduct[];
 }
 
 export interface TopProduct {

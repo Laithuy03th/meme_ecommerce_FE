@@ -1,12 +1,12 @@
 import { BaseEntity } from "./common";
 
-export type DiscountType = 'PERCENT' | 'AMOUNT';
+export type DiscountType = 'PERCENT' | 'FIXED';
 
 export interface Voucher extends BaseEntity {
     code: string;
     discountType: DiscountType;
     discountValue: number;
-    minOrderAmount?: number;
+    minOrderValue: number;
     maxDiscountAmount?: number;
     startDate: string;
     endDate: string;
@@ -19,11 +19,12 @@ export interface CreateVoucherRequest {
     code: string;
     discountType: DiscountType;
     discountValue: number;
-    minOrderAmount?: number;
+    minOrderValue: number;
     maxDiscountAmount?: number;
-    startDate?: string; // ISO 8601
-    endDate?: string;
+    startDate: string; // ISO 8601
+    endDate: string;
     usageLimit: number;
+    isActive?: boolean;
 }
 
 export interface VoucherListParams {

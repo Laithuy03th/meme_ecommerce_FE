@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { cookies } from "next/headers";
 import { AdminGuard } from "@/components/AdminGuard";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +47,7 @@ export default async function RootLayout({
           <AdminGuard defaultOpen={defaultOpen}>
             {children}
           </AdminGuard>
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
     </html>

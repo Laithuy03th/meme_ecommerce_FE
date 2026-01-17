@@ -33,6 +33,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { Loader2, Plus, Pencil, Trash2, Tag, Percent, DollarSign, Calendar, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -50,11 +51,12 @@ export default function VouchersPage() {
         code: "",
         discountType: "PERCENT",
         discountValue: 0,
-        minOrderAmount: 0,
+        minOrderValue: 0,
         maxDiscountAmount: 0,
         startDate: new Date().toISOString().slice(0, 16),
         endDate: new Date().toISOString().slice(0, 16),
         usageLimit: 1,
+        isActive: true,
     });
 
     useEffect(() => {
@@ -85,17 +87,38 @@ export default function VouchersPage() {
         }
     };
 
+    const handleToggle = async (id: number, currentStatus: boolean) => {
+        try {
+            // Optimistic update
+            if (vouchers) {
+                const updatedContent = vouchers.content.map(v =>
+                    v.id === id ? { ...v, isActive: !currentStatus } : v
+                );
+                setVouchers({ ...vouchers, content: updatedContent });
+            }
+
+            await voucherApi.toggle(id);
+            toast.success("Cập nhật trạng thái thành công");
+            // No need to reload if optimistic update was correct, but safely reload to sync
+            loadVouchers();
+        } catch (error) {
+            handleApiError(error);
+            loadVouchers(); // Revert on error
+        }
+    };
+
     const openCreateDialog = () => {
         setEditingVoucher(null);
         setFormData({
             code: "",
             discountType: "PERCENT",
             discountValue: 0,
-            minOrderAmount: 0,
+            minOrderValue: 0,
             maxDiscountAmount: 0,
             startDate: new Date().toISOString().slice(0, 16),
             endDate: new Date().toISOString().slice(0, 16),
             usageLimit: 1,
+            isActive: true
         });
         setIsDialogOpen(true);
     };
@@ -106,11 +129,12 @@ export default function VouchersPage() {
             code: voucher.code,
             discountType: voucher.discountType,
             discountValue: voucher.discountValue,
-            minOrderAmount: voucher.minOrderAmount || 0,
+            minOrderValue: voucher.minOrderValue || 0,
             maxDiscountAmount: voucher.maxDiscountAmount || 0,
             startDate: voucher.startDate.slice(0, 16),
             endDate: voucher.endDate.slice(0, 16),
             usageLimit: voucher.usageLimit,
+            isActive: voucher.isActive
         });
         setIsDialogOpen(true);
     };
@@ -128,14 +152,10 @@ export default function VouchersPage() {
             if (start >= end) {
                 errors.push('Ngày bắt đầu phải trước ngày kết thúc');
             }
-
-            if (end < new Date()) {
-                errors.push('Ngày kết thúc không được ở quá khứ');
-            }
         }
 
-        if (formData.discountType === 'PERCENT' && formData.discountValue > 100) {
-            errors.push('Giảm % không được quá 100');
+        if (formData.discountType === 'PERCENT' && (formData.discountValue < 1 || formData.discountValue > 100)) {
+            errors.push('Giảm % phải từ 1 đến 100');
         }
 
         if (errors.length > 0) {
@@ -146,24 +166,16 @@ export default function VouchersPage() {
         setIsSubmitting(true);
 
         try {
-            // Convert datetime-local format to ISO 8601 for backend
             const payload: CreateVoucherRequest = {
                 code: formData.code,
                 discountType: formData.discountType,
                 discountValue: formData.discountValue,
-                minOrderAmount: formData.minOrderAmount && formData.minOrderAmount > 0
-                    ? formData.minOrderAmount
-                    : undefined,
-                maxDiscountAmount: formData.maxDiscountAmount && formData.maxDiscountAmount > 0
-                    ? formData.maxDiscountAmount
-                    : undefined,
-                startDate: formData.startDate
-                    ? new Date(formData.startDate).toISOString()
-                    : undefined,
-                endDate: formData.endDate
-                    ? new Date(formData.endDate).toISOString()
-                    : undefined,
+                minOrderValue: formData.minOrderValue ?? 0,
+                maxDiscountAmount: formData.discountType === 'PERCENT' ? formData.maxDiscountAmount : 0,
+                startDate: new Date(formData.startDate).toISOString(),
+                endDate: new Date(formData.endDate).toISOString(),
                 usageLimit: formData.usageLimit,
+                isActive: formData.isActive
             };
 
             if (editingVoucher) {
@@ -215,7 +227,7 @@ export default function VouchersPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Vouchers Management</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Voucher Management</h1>
                     <p className="text-muted-foreground mt-1">
                         Create and manage discount codes & promotions
                     </p>
@@ -296,6 +308,7 @@ export default function VouchersPage() {
                                 <TableHead>Usage</TableHead>
                                 <TableHead>Valid Period</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Toggle Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -319,16 +332,16 @@ export default function VouchersPage() {
                                     </TableCell>
                                     <TableCell className="text-sm">
                                         <div className="space-y-1">
-                                            {voucher.minOrderAmount && voucher.minOrderAmount > 0 && (
+                                            {voucher.minOrderValue > 0 && (
                                                 <div className="text-muted-foreground">
-                                                    Min: {voucher.minOrderAmount.toLocaleString()}đ
+                                                    Min: {voucher.minOrderValue.toLocaleString()}đ
                                                 </div>
                                             )}
-                                            {voucher.maxDiscountAmount && voucher.maxDiscountAmount > 0 && (
+                                            {voucher.maxDiscountAmount ? (
                                                 <div className="text-muted-foreground">
                                                     Max: {voucher.maxDiscountAmount.toLocaleString()}đ
                                                 </div>
-                                            )}
+                                            ) : null}
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -347,14 +360,20 @@ export default function VouchersPage() {
                                     <TableCell className="text-sm">
                                         <div className="flex items-center gap-1 text-muted-foreground">
                                             <Calendar className="w-3 h-3" />
-                                            {format(new Date(voucher.startDate), 'dd/MM/yy')}
+                                            {format(new Date(voucher.startDate), 'dd/MM/yy HH:mm')}
                                         </div>
                                         <div className="flex items-center gap-1 text-muted-foreground">
                                             <Calendar className="w-3 h-3" />
-                                            {format(new Date(voucher.endDate), 'dd/MM/yy')}
+                                            {format(new Date(voucher.endDate), 'dd/MM/yy HH:mm')}
                                         </div>
                                     </TableCell>
                                     <TableCell>{getStatusBadge(voucher)}</TableCell>
+                                    <TableCell>
+                                        <Switch
+                                            checked={voucher.isActive}
+                                            onCheckedChange={() => handleToggle(voucher.id, voucher.isActive)}
+                                        />
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
                                             <Button variant="ghost" size="icon" onClick={() => openEditDialog(voucher)}>
@@ -373,7 +392,7 @@ export default function VouchersPage() {
                             ))}
                             {(!vouchers?.content || vouchers.content.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-32 text-muted-foreground">
+                                    <TableCell colSpan={8} className="text-center h-32 text-muted-foreground">
                                         No vouchers found. Create your first voucher!
                                     </TableCell>
                                 </TableRow>
@@ -432,15 +451,20 @@ export default function VouchersPage() {
                                         value={formData.code}
                                         onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                                         required
-                                        className="font-mono"
+                                        className="font-mono uppercase"
+                                        disabled={!!editingVoucher} // Block editing code for consistency
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="discountType">Discount Type *</Label>
                                     <Select
                                         value={formData.discountType}
-                                        onValueChange={(value: "PERCENT" | "AMOUNT") =>
-                                            setFormData({ ...formData, discountType: value })
+                                        onValueChange={(value: "PERCENT" | "FIXED") =>
+                                            setFormData({
+                                                ...formData,
+                                                discountType: value,
+                                                discountValue: 0 // Reset value on type change to avoid invalid 100+ percent
+                                            })
                                         }
                                     >
                                         <SelectTrigger>
@@ -448,7 +472,7 @@ export default function VouchersPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="PERCENT">Percentage (%)</SelectItem>
-                                            <SelectItem value="AMOUNT">Fixed Amount (đ)</SelectItem>
+                                            <SelectItem value="FIXED">Fixed Amount (VNĐ)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -463,33 +487,36 @@ export default function VouchersPage() {
                                         id="discountValue"
                                         type="number"
                                         min="0"
+                                        max={formData.discountType === "PERCENT" ? 100 : undefined}
                                         value={formData.discountValue}
                                         onChange={(e) => setFormData({ ...formData, discountValue: Number(e.target.value) })}
                                         required
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="minOrderAmount">Min Order (đ)</Label>
+                                    <Label htmlFor="minOrderValue">Min Order (đ)</Label>
                                     <Input
-                                        id="minOrderAmount"
+                                        id="minOrderValue"
                                         type="number"
                                         min="0"
-                                        value={formData.minOrderAmount}
-                                        onChange={(e) => setFormData({ ...formData, minOrderAmount: Number(e.target.value) })}
+                                        value={formData.minOrderValue}
+                                        onChange={(e) => setFormData({ ...formData, minOrderValue: Number(e.target.value) })}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="maxDiscountAmount">Max Discount (đ)</Label>
-                                    <Input
-                                        id="maxDiscountAmount"
-                                        type="number"
-                                        min="0"
-                                        value={formData.maxDiscountAmount}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, maxDiscountAmount: Number(e.target.value) })
-                                        }
-                                    />
-                                </div>
+                                {formData.discountType === "PERCENT" && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="maxDiscountAmount">Max Discount (đ)</Label>
+                                        <Input
+                                            id="maxDiscountAmount"
+                                            type="number"
+                                            min="0"
+                                            value={formData.maxDiscountAmount}
+                                            onChange={(e) =>
+                                                setFormData({ ...formData, maxDiscountAmount: Number(e.target.value) })
+                                            }
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-3 gap-4">
@@ -524,6 +551,15 @@ export default function VouchersPage() {
                                         required
                                     />
                                 </div>
+                            </div>
+
+                            <div className="flex items-center space-x-2 pt-2">
+                                <Switch
+                                    id="active-mode"
+                                    checked={formData.isActive}
+                                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                                />
+                                <Label htmlFor="active-mode">Active immediately</Label>
                             </div>
                         </div>
                         <DialogFooter>

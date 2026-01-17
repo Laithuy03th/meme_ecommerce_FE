@@ -46,8 +46,18 @@ export const orderApi = {
      */
     async updateStatus(orderId: number, newStatus: OrderStatus): Promise<OrderDetail> {
         return authenticatedFetch<OrderDetail>(`/admin/orders/${orderId}/status`, {
-            method: 'PATCH',
+            method: 'PUT',
             body: JSON.stringify({ status: newStatus } as UpdateOrderStatusRequest),
+        });
+    },
+
+    /**
+     * PUT /api/v1/admin/orders/{id}/return/approve
+     * Approve return request
+     */
+    async approveReturn(orderId: number): Promise<void> {
+        return authenticatedFetch<void>(`/admin/orders/${orderId}/return/approve`, {
+            method: 'PUT',
         });
     },
 };

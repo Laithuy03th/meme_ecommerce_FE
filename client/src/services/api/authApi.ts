@@ -43,6 +43,7 @@ export const login = async (data: { email: string; password: string }): Promise<
 export const register = async (data: { email: string; password: string; fullName: string; phone?: string }): Promise<RegisterResponse> => {
     const res = await fetch(`${BASE_URL}/auth/register`, {
         method: "POST",
+        credentials: 'include', // ✅ For future cookie support
         headers: {
             "Content-Type": "application/json",
         },
@@ -120,6 +121,7 @@ export const getMe = async (token?: string): Promise<any> => {
 export const forgotPassword = async (email: string): Promise<void> => {
     const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
         method: "POST",
+        credentials: 'include', // ✅ Consistency
         headers: {
             "Content-Type": "application/json",
         },
@@ -134,6 +136,7 @@ export const forgotPassword = async (email: string): Promise<void> => {
 export const changePassword = async (data: { oldPassword: string; newPassword: string }, token: string): Promise<void> => {
     const res = await fetch(`${BASE_URL}/auth/change-password`, {
         method: "POST",
+        credentials: 'include', // ✅ Consistency
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`

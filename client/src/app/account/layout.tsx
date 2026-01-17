@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { User, Package, MapPin, LogOut, Settings } from "lucide-react";
+import { User, Package, MapPin, LogOut, Settings, Star } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 
 const AccountLayout = ({ children }: { children: React.ReactNode }) => {
@@ -18,6 +18,7 @@ const AccountLayout = ({ children }: { children: React.ReactNode }) => {
     const links = [
         { name: "Profile", href: "/account", icon: User },
         { name: "Orders", href: "/account/orders", icon: Package },
+        { name: "Reviews", href: "/account/reviews", icon: Star },
         { name: "Addresses", href: "/account/addresses", icon: MapPin },
         { name: "Settings", href: "/account/settings", icon: Settings },
     ];

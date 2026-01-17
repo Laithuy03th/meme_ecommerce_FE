@@ -81,13 +81,17 @@ const ReviewModal = ({ isOpen, onClose, items, onReviewSuccess }: ReviewModalPro
         const productId = selectedItem.productId;
         const orderItemId = selectedItem.id;  // ✅ GET orderItemId từ item
 
+        console.log("Review Debug:", { selectedItem, productId, orderItemId }); // Debug log
+
         if (!productId) {
-            toast.error("Lỗi dữ liệu: Sản phẩm không có ID.");
+            toast.error("Lỗi: Không tìm thấy ID sản phẩm. Vui lòng thử lại sau.");
+            console.error("Missing productId in selectedItem:", selectedItem);
             return;
         }
 
-        if (!orderItemId) {  // ✅ VALIDATE orderItemId
-            toast.error("Lỗi: Thiếu thông tin đơn hàng.");
+        if (!orderItemId) {  // VALIDATE orderItemId
+            toast.error("Lỗi: Thiếu thông tin đơn hàng. Vui lòng thử lại.");
+            console.error("Missing orderItemId (item.id) in selectedItem:", selectedItem);
             return;
         }
 
@@ -116,10 +120,7 @@ const ReviewModal = ({ isOpen, onClose, items, onReviewSuccess }: ReviewModalPro
             toast.success("Cảm ơn đánh giá và hình ảnh feedback của bạn!");
             onReviewSuccess();
 
-            // ✅ AUTO-REFRESH: Update product rating and reviews
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500); // Wait 1.5s for user to see success toast
+            // ✅ Close modal - parent will handle data refresh
 
         } catch (error: any) {
             console.error("Submit Error:", error);

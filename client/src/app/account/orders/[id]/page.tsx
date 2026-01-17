@@ -30,6 +30,8 @@ const OrderDetailPage = () => {
     const fetchOrder = async () => {
         try {
             const data = await getOrder(parseInt(id));
+            console.log("Order Data:", data); // Debug log
+            console.log("Order Items:", data.items); // Debug items
             setOrder(data);
         } catch (error) {
             console.error("Failed to fetch order", error);
@@ -274,21 +276,34 @@ const OrderDetailPage = () => {
                         {order.items?.map((item, i) => (
                             <div key={i} className="flex gap-4 border border-gray-100 rounded-xl p-4 relative bg-white items-center">
                                 <div className="relative w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 group">
-                                    <Link href={item.productId ? `/products/${item.productId}` : '#'}>
+                                    {item.productId ? (
+                                        <Link href={`/products/${item.productId}`} className="block w-full h-full">
+                                            <Image
+                                                src={item.productImageUrl || item.thumbnailUrl || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=1000"}
+                                                alt={item.productName}
+                                                fill
+                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                            />
+                                        </Link>
+                                    ) : (
                                         <Image
                                             src={item.productImageUrl || item.thumbnailUrl || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=1000"}
                                             alt={item.productName}
                                             fill
-                                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                            className="object-cover"
                                         />
-                                    </Link>
+                                    )}
                                 </div>
                                 <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div className="space-y-1">
                                         <h4 className="font-semibold text-gray-900 line-clamp-2">
-                                            <Link href={item.productId ? `/products/${item.productId}` : '#'} className="hover:text-primary transition-colors">
-                                                {item.productName}
-                                            </Link>
+                                            {item.productId ? (
+                                                <Link href={`/products/${item.productId}`} className="hover:text-primary transition-colors cursor-pointer">
+                                                    {item.productName}
+                                                </Link>
+                                            ) : (
+                                                <span>{item.productName}</span>
+                                            )}
                                         </h4>
                                         <div className="text-sm text-gray-500">
                                             {item.variantInfo ? (

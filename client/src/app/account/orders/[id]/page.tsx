@@ -25,7 +25,8 @@ const OrderDetailPage = () => {
     const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
     const [isReordering, setIsReordering] = useState(false);
     const [reviewModalItems, setReviewModalItems] = useState<OrderItemType[]>([]);
-    const [hasReviewed, setHasReviewed] = useState(false); // Legacy - can remove if fully migrated, but keeping for safety
+    // Track reviewed item IDs locally — survives server re-fetch race condition
+    const [localReviewedIds, setLocalReviewedIds] = useState<Set<number>>(new Set());
 
     const fetchOrder = async () => {
         try {
@@ -324,7 +325,7 @@ const OrderDetailPage = () => {
                                         {/* PER-ITEM ACTION BUTTON */}
                                         {order.status === ORDER_STATUS.DELIVERED && !isReturned && (
                                             <>
-                                                {!item.hasReviewed ? (
+                                                {!(item.hasReviewed || localReviewedIds.has(item.id)) ? (
                                                     <button
                                                         onClick={() => {
                                                             setReviewModalItems([item]);
@@ -457,10 +458,13 @@ const OrderDetailPage = () => {
                 isOpen={isReviewOpen}
                 onClose={() => setIsReviewOpen(false)}
                 items={reviewModalItems}
-                onReviewSuccess={() => {
-                    fetchOrder();
+                onReviewSuccess={(reviewedItemId: number) => {
+                    // Track locally — immune to server re-fetch overwriting state
+                    setLocalReviewedIds(prev => new Set(prev).add(reviewedItemId));
                     setIsReviewOpen(false);
-                    toast.success("Đánh giá thành công!");
+                    toast.success("Đánh giá thành công! Cảm ơn bạn 🎉");
+                    // Sync with server in background
+                    fetchOrder();
                 }}
             />
 

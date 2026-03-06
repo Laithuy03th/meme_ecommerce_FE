@@ -1,5 +1,4 @@
-import { authenticatedFetch } from './authenticatedFetch';
-import { BASE_URL } from './base';
+import { authenticatedFetch, BASE_URL } from './base';
 
 // ==================== REVIEW TYPES ====================
 /**

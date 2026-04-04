@@ -2,27 +2,32 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-    const token = request.cookies.get("adminAccessToken")?.value;
+    // Middleware chạy trên Edge runtime — KHÔNG có localStorage.
+    // Dùng "refreshToken" cookie (HttpOnly, được BE set khi login thành công).
+    // Access Token nằm trong localStorage -> Middleware KHÔNG đọc được.
+    const refreshToken = request.cookies.get("refreshToken")?.value;
     const { pathname } = request.nextUrl;
 
-    // Define public paths
-    const publicPaths = ["/login", "/favicon.ico"];
+    const isLoginPage = pathname === "/login";
+    const isPublicPath =
+        pathname.startsWith("/_next") ||
+        pathname.startsWith("/api") ||
+        pathname === "/favicon.ico";
 
-    // Check if the path is public
-    if (publicPaths.some((path) => pathname.startsWith(path))) {
-        // If user is already logged in and tries to access login, redirect to dashboard
-        if (token && pathname === "/login") {
-            return NextResponse.redirect(new URL("/", request.url));
-        }
+    // Bỏ qua static files và API routes
+    if (isPublicPath) {
         return NextResponse.next();
     }
 
-    // NOTE: Auth is now handled client-side via AdminGuard and localStorage to avoid cookie conflicts.
-    // Middleware check for 'adminAccessToken' is disabled.
+    // Chưa có refresh token → chưa đăng nhập → redirect về /login
+    if (!refreshToken && !isLoginPage) {
+        return NextResponse.redirect(new URL("/login", request.url));
+    }
 
-    // if (!token) {
-    //     return NextResponse.redirect(new URL("/login", request.url));
-    // }
+    // Đã đăng nhập mà vào trang /login → redirect về dashboard
+    if (refreshToken && isLoginPage) {
+        return NextResponse.redirect(new URL("/", request.url));
+    }
 
     return NextResponse.next();
 }
@@ -30,12 +35,11 @@ export function middleware(request: NextRequest) {
 export const config = {
     matcher: [
         /*
-         * Match all request paths except for the ones starting with:
-         * - api (API routes)
+         * Bảo vệ tất cả routes trừ:
          * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
+         * - _next/image (image optimization)
+         * - favicon.ico
          */
-        "/((?!api|_next/static|_next/image|favicon.ico).*)",
+        "/((?!_next/static|_next/image|favicon.ico).*)",
     ],
 };

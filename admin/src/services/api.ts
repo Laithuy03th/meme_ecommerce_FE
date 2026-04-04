@@ -1,9 +1,6 @@
-// import { refreshToken } from "./authApi"; // Removed to fix circular dependency
-
-
 export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
-// Helper to throw error with status
+
 export class ApiError extends Error {
     status: number;
     constructor(message: string, status: number) {
@@ -12,7 +9,11 @@ export class ApiError extends Error {
     }
 }
 
-// Concurrency handling for refresh token
+// ================================================================
+// REFRESH TOKEN LOCK — Chống Race Condition
+// Khi nhiều request cùng bị 401, chỉ 1 request thực sự gọi /refresh.
+// Các request còn lại xếp hàng chờ token mới.
+// ================================================================
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
 
@@ -27,30 +28,26 @@ const processQueue = (error: Error | null, token: string | null = null) => {
     failedQueue = [];
 };
 
-/**
- * Refresh Token API - Internal use only to avoid circular dependency
- */
+
 const refreshToken = async (): Promise<{ accessToken: string; user?: any }> => {
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
-        credentials: 'include',
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: "",
+        credentials: "include", // Bắt buộc: gửi HttpOnly Cookie lên
+        // Không có body, không có Content-Type — BE chỉ cần Cookie
     });
 
     if (!res.ok) {
-        throw new Error("Failed to refresh token");
+        throw new ApiError("Failed to refresh token", res.status);
     }
 
     return res.json();
 };
 
-/**
- * Helper to check and limit running one refresh token request at a time
- */
+// ================================================================
+// Thực thi Refresh + cập nhật localStorage + xả hàng đợi
+// ================================================================
 const performRefreshToken = async (): Promise<string> => {
+    // Nếu đang refresh, xếp hàng đợi token mới
     if (isRefreshing) {
         return new Promise((resolve, reject) => {
             failedQueue.push({ resolve, reject });
@@ -60,154 +57,139 @@ const performRefreshToken = async (): Promise<string> => {
     isRefreshing = true;
 
     try {
-        // Call refresh API
         const refreshResponse = await refreshToken();
 
-        if (!refreshResponse || !refreshResponse.accessToken) {
-            throw new Error("No access token returned");
+        if (!refreshResponse?.accessToken) {
+            throw new ApiError("No access token returned from refresh", 401);
         }
 
         const newAccessToken = refreshResponse.accessToken;
 
-        // Update localStorage
-        if (typeof window !== "undefined") {
-            localStorage.setItem("accessToken", newAccessToken);
-            if (refreshResponse.user) {
-                localStorage.setItem("user", JSON.stringify(refreshResponse.user));
-            }
+        // Cập nhật localStorage
+        localStorage.setItem("accessToken", newAccessToken);
+        if (refreshResponse.user) {
+            localStorage.setItem("user", JSON.stringify(refreshResponse.user));
         }
 
+        // Xả hàng: cho tất cả request đang chờ dùng token mới
         processQueue(null, newAccessToken);
         return newAccessToken;
+
     } catch (error) {
+        // Refresh thất bại: xả hàng với lỗi, buộc đăng nhập lại
         processQueue(error as Error, null);
 
-        // Logout handling
-        if (typeof window !== "undefined") {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("user");
-            // Only redirect if not already on login page to avoid loops
-            if (!window.location.pathname.includes("/login")) {
-                window.location.href = "/login";
-            }
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
+
+        if (!window.location.pathname.includes("/login")) {
+            window.location.href = "/login";
         }
+
         throw error;
     } finally {
         isRefreshing = false;
     }
 };
 
-/**
- * Helper to get token (server-side only for now, or client-side if needed)
- */
-const getToken = async () => {
+const getToken = (): string | null => {
     if (typeof window === "undefined") {
-        // Server-side - dynamic import to avoid client component errors
-        const { cookies } = await import("next/headers");
-        const cookieStore = await cookies();
-        return cookieStore.get("accessToken")?.value;
-    } else {
-        // Client-side
-        return localStorage.getItem("accessToken");
+        // Server-side: không thể đọc localStorage.
+        // Middleware Next.js phải xử lý redirect trước khi vào đây.
+        return null;
     }
+    return localStorage.getItem("accessToken");
 };
 
-export const authenticatedFetch = async <T = any>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-    // Get token
-    let token = await getToken();
+// ================================================================
+// authenticatedFetch — Fetch với tự động retry khi hết token
+// ================================================================
+export const authenticatedFetch = async <T = any>(
+    endpoint: string,
+    options: RequestInit = {}
+): Promise<T> => {
+    const token = getToken();
 
-    const getHeaders = (t: string | null | undefined) => {
-        const headers: Record<string, string> = {
-            "Content-Type": "application/json",
-            ...(options.headers as Record<string, string>),
-        };
-        if (t) {
-            headers["Authorization"] = `Bearer ${t}`;
-        }
-        return headers;
-    };
-
-    const fetchOptions = {
-        ...options,
-        credentials: "include" as RequestCredentials,
-    };
+    const buildHeaders = (t: string | null | undefined): Record<string, string> => ({
+        "Content-Type": "application/json",
+        ...(options.headers as Record<string, string>),
+        ...(t ? { Authorization: `Bearer ${t}` } : {}),
+    });
 
     const url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
 
-    try {
-        let res = await fetch(url, {
-            ...fetchOptions,
-            headers: getHeaders(token),
-        });
+    const fetchOptions: RequestInit = {
+        ...options,
+        credentials: "include",
+    };
 
-        // Check 401
-        if (res.status === 401) {
-            // Handle Server Side 401
-            if (typeof window === "undefined") {
-                // For now, simpler to just throw/redirect rather than complex server-refresh
-                const { redirect } = await import("next/navigation");
-                // We can't easily refresh token on server without manually handling cookies
-                // So we opt to redirect to login if session expires on server
-                // Note: redirect() throws a NEXT_REDIRECT error, so it stops execution
-                // But we should be careful inside a try/catch block for API calls
-                redirect("/login");
+    let res = await fetch(url, {
+        ...fetchOptions,
+        headers: buildHeaders(token),
+    });
+
+    // ================================================================
+    //  Xử lý 401
+    // ================================================================
+    if (res.status === 401) {
+        // Tránh vòng lặp vô tận: nếu chính endpoint /refresh bị 401 thì dừng
+        if (endpoint.includes("/auth/refresh")) {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("user");
+            if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+                window.location.href = "/login";
             }
+            throw new ApiError("Session expired", 401);
+        }
 
-            // If this was a refresh attempt that failed, don't retry
-            if (endpoint.includes("/auth/refresh")) {
-                throw new ApiError("Session expired", 401);
-            }
-
+        if (typeof window !== "undefined") {
+            // Client-side: thực hiện refresh rồi retry
             try {
-                // Perform refresh token protocol (Client Side mostly)
-                if (typeof window !== "undefined") {
-                    const newToken = await performRefreshToken();
+                const newToken = await performRefreshToken();
 
-                    // Retry request with new token
-                    res = await fetch(url, {
-                        ...fetchOptions,
-                        headers: getHeaders(newToken),
-                    });
-                } else {
-                    // Server side: If token expired, we might try to refresh if we had the refresh token cookie... 
-                    // But for now let's fail gracefully or rely on client to refresh
-                    throw new ApiError("Session expired (Server)", 401);
+                // Retry request với token mới
+                res = await fetch(url, {
+                    ...fetchOptions,
+                    headers: buildHeaders(newToken),
+                });
+
+                // FIX #5: Nếu retry vẫn 401 thì không loop nữa
+                if (res.status === 401) {
+                    throw new ApiError("Unauthorized after token refresh", 401);
                 }
             } catch (error) {
-                if (typeof window !== "undefined") {
-                    throw new ApiError("Session expired", 401);
-                }
-                // On Server, just propagate
                 throw new ApiError("Session expired", 401);
             }
-        }
+        } else {
 
-        if (res.status === 204) {
-            return null as unknown as T;
+            throw new ApiError("Session expired (server-side)", 401);
         }
-
-        if (!res.ok) {
-            const text = await res.text();
-            let errorMessage = `API Error: ${res.status} ${res.statusText}`;
-            try {
-                const json = JSON.parse(text);
-                if (json.message) errorMessage = json.message;
-            } catch (e) {
-                // ignore json parse error
-            }
-            throw new ApiError(errorMessage, res.status);
-        }
-
-        return res.json();
-    } catch (error) {
-        throw error;
     }
+
+    if (res.status === 204) {
+        return null as unknown as T;
+    }
+
+    if (!res.ok) {
+        const text = await res.text();
+        let errorMessage = `API Error: ${res.status} ${res.statusText}`;
+        try {
+            const json = JSON.parse(text);
+            if (json.message) errorMessage = json.message;
+        } catch (_) { /* ignore */ }
+        throw new ApiError(errorMessage, res.status);
+    }
+
+    return res.json();
 };
 
+// ================================================================
+// Utility
+// ================================================================
 export function buildQueryString(params: Record<string, any>): string {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null && value !== "") {
             query.append(key, String(value));
         }
     });

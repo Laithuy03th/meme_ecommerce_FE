@@ -36,7 +36,9 @@ export const getProducts = async (
         minPrice?: number;
         maxPrice?: number;
         categorySlug?: string;
-        keyword?: string; // Add keyword support
+        keyword?: string;
+        brand?: string;
+        minRating?: number;
     }
 ): Promise<PaginatedResponse<ProductType>> => {
     try {
@@ -47,9 +49,10 @@ export const getProducts = async (
 
         if (filters?.minPrice !== undefined) params.append("minPrice", filters.minPrice.toString());
         if (filters?.maxPrice !== undefined) params.append("maxPrice", filters.maxPrice.toString());
-        // API expects 'category' not 'categorySlug'
         if (filters?.categorySlug) params.append("category", filters.categorySlug);
         if (filters?.keyword) params.append("keyword", filters.keyword);
+        if (filters?.brand) params.append("brand", filters.brand);
+        if (filters?.minRating !== undefined) params.append("minRating", filters.minRating.toString());
 
         const res = await fetch(`${BASE_URL}/products?${params.toString()}`, {
             cache: "no-store",

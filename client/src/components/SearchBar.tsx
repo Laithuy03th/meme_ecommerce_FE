@@ -215,7 +215,7 @@ const SearchBar = ({ onToggle }: SearchBarProps) => {
                   <div key={categorySlug}>
                     <h4 className="text-xs font-bold text-slate-400 mb-3 uppercase flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                      {items[0]?.category || categorySlug}
+                      {items[0]?.categoryName || categorySlug}
                     </h4>
                     <ul className="space-y-2">
                       {items.map((item) => (

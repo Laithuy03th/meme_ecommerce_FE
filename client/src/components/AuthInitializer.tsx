@@ -30,7 +30,7 @@ const AuthInitializer = () => {
                     console.log('Access token expired, attempting refresh...');
 
                     try {
-                        // ✅ Gọi refresh (sử dụng HttpOnly Cookie)
+                        // Gọi refresh (sử dụng HttpOnly Cookie)
                         const refreshData = await refreshTokenAPI();
 
                         // Update với token mới
@@ -57,15 +57,16 @@ const AuthInitializer = () => {
                     useWishlistStore.getState().fetchWishlist();
                     console.log('Session restored from cookie');
                 } catch (error) {
-                    // No valid session - user needs to login
-                    console.log('No valid session found');
+                    // No valid session — user chưa đăng nhập, không phải lỗi
+                    console.log('No valid session found, user needs to login');
                 }
             }
         };
 
         initAuth();
-        // ❌ Removed refreshToken from dependencies (không còn tồn tại)
-    }, [login, logout, accessToken, updateTokens]);
+        // Removed refreshToken from dependencies (không còn tồn tại)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Chỉ chạy 1 lần khi mount — Zustand actions stable, không cần trong deps
 
     return null;
 };

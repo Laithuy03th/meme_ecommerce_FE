@@ -31,6 +31,18 @@ const nextConfig: NextConfig = {
         protocol: 'http',
         hostname: 'localhost',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.apple.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'news.samsung.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'us.laneige.com',
+      },
     ],
   },
   async rewrites() {

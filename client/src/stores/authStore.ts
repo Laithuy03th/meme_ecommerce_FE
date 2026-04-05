@@ -6,7 +6,7 @@ import { logout as apiLogout } from '@/services/api';
 interface AuthState {
     user: UserType | null;
     accessToken: string | null;
-    // ❌ REMOVED: refreshToken - giờ lưu trong HttpOnly Cookie, FE không cần/không nên lưu
+   
     isAuthenticated: boolean;
     login: (user: UserType, accessToken: string) => void;
     updateTokens: (user: UserType, accessToken: string) => void;

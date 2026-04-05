@@ -80,7 +80,7 @@ export type ProductType = {
 
 export type SearchKeywordSuggestion = {
   keyword: string;
-  category: string;
+  categoryName: string;
   categorySlug: string;
 };
 

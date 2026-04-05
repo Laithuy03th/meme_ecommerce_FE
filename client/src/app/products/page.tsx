@@ -18,6 +18,8 @@ const ProductsPage = async ({
   const sort = (params.sort as string) || "newest";
   const minPrice = params.minPrice ? Number(params.minPrice) : undefined;
   const maxPrice = params.maxPrice ? Number(params.maxPrice) : undefined;
+  const brand = params.brand as string;
+  const minRating = params.minRating ? Number(params.minRating) : undefined;
   const page = Number(params.page) || 1;
   const size = 20;
 
@@ -29,6 +31,8 @@ const ProductsPage = async ({
       category: categorySlug,
       minPrice,
       maxPrice,
+      brand,
+      minRating,
       sortBy: sort as any,
       page: page - 1,
       size,

@@ -110,6 +110,10 @@ export interface SearchProductsParams {
     minPrice?: number;
     /** Maximum price filter */
     maxPrice?: number;
+    /** Brand filter */
+    brand?: string;
+    /** Minimum rating filter */
+    minRating?: number;
     /** Sort option: "newest" | "priceAsc" | "priceDesc" | "nameAsc" | "nameDesc" */
     sortBy?: "newest" | "priceAsc" | "priceDesc" | "nameAsc" | "nameDesc";
     /** Page number (0-indexed) */
@@ -127,6 +131,8 @@ export const searchProducts = async (
             category,
             minPrice,
             maxPrice,
+            brand,
+            minRating,
             sortBy = "newest",
             page = 0,
             size = 20
@@ -148,6 +154,12 @@ export const searchProducts = async (
         }
         if (maxPrice !== undefined) {
             urlParams.append("maxPrice", maxPrice.toString());
+        }
+        if (brand) {
+            urlParams.append("brand", brand);
+        }
+        if (minRating !== undefined) {
+            urlParams.append("minRating", minRating.toString());
         }
 
         const res = await fetch(`${BASE_URL}/products?${urlParams.toString()}`, {

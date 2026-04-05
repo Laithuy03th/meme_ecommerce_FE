@@ -25,7 +25,7 @@ export const updateProfile = async (data: Partial<UserType>): Promise<UserType> 
 export const login = async (data: { email: string; password: string }): Promise<LoginResponse> => {
     const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
-        credentials: 'include', // Quan trọng: để browser nhận/gửi cookie
+        credentials: 'include', // browser nhận/gửi cookie
         headers: {
             "Content-Type": "application/json",
         },
@@ -43,7 +43,7 @@ export const login = async (data: { email: string; password: string }): Promise<
 export const register = async (data: { email: string; password: string; fullName: string; phone?: string }): Promise<RegisterResponse> => {
     const res = await fetch(`${BASE_URL}/auth/register`, {
         method: "POST",
-        credentials: 'include', // ✅ For future cookie support
+        credentials: 'include', // For future cookie support
         headers: {
             "Content-Type": "application/json",
         },
@@ -65,11 +65,11 @@ export const register = async (data: { email: string; password: string; fullName
 export const refreshToken = async (): Promise<LoginResponse> => {
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
-        credentials: 'include', // ✅ Quan trọng: browser tự gửi cookie
+        credentials: 'include', // browser tự gửi cookie
         headers: {
             "Content-Type": "application/json",
         },
-        // ❌ KHÔNG gửi body nữa, refresh token ở cookie
+        //`refresh token ở cookie
     });
 
     if (!res.ok) {
@@ -121,7 +121,7 @@ export const getMe = async (token?: string): Promise<any> => {
 export const forgotPassword = async (email: string): Promise<void> => {
     const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
         method: "POST",
-        credentials: 'include', // ✅ Consistency
+        credentials: 'include', // Consistency
         headers: {
             "Content-Type": "application/json",
         },
@@ -136,7 +136,7 @@ export const forgotPassword = async (email: string): Promise<void> => {
 export const changePassword = async (data: { oldPassword: string; newPassword: string }, token: string): Promise<void> => {
     const res = await fetch(`${BASE_URL}/auth/change-password`, {
         method: "POST",
-        credentials: 'include', // ✅ Consistency
+        credentials: 'include', // Consistency
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`

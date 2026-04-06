@@ -20,8 +20,9 @@ const ProductView = ({
 }) => {
     const [selectedColor, setSelectedColor] = useState(initialColor);
 
-    // Get safe images with fallback
-    const safeImages = getSafeImageArray(product.images, product.id, product.name);
+    // Extract image URLs regardless of whether they are strings or objects
+    const imageUrls = product.images?.map(img => typeof img === 'string' ? img : img.imageUrl);
+    const safeImages = getSafeImageArray(imageUrls, product.id, product.name);
     const safeMainImage = getSafeImageUrl(product.image, product.id, product.name);
     const [currentImage, setCurrentImage] = useState(safeImages[0] || safeMainImage);
 

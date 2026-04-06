@@ -9,6 +9,34 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
+// Map common color names (especially Vietnamese) to valid CSS hex codes
+const getColorCode = (colorName: string) => {
+  if (!colorName) return "#FFFFFF";
+  if (colorName.startsWith("#") || colorName.startsWith("rgb")) return colorName;
+  
+  const colorMap: Record<string, string> = {
+    "black": "#000000", "white": "#FFFFFF", "red": "#EF4444", "blue": "#3B82F6",
+    "green": "#10B981", "yellow": "#F59E0B", "orange": "#F97316", "purple": "#8B5CF6",
+    "pink": "#EC4899", "gray": "#6B7280", "brown": "#92400E", "silver": "#D1D5DB",
+    "gold": "#FBBF24", "navy": "#1E3A8A", "beige": "#FDE68A",
+    
+    // Vietnamese Common Colors
+    "đen": "#000000", "trắng": "#FFFFFF", "đỏ": "#EF4444", "xanh dương": "#3B82F6",
+    "xanh lục": "#10B981", "xanh lá": "#10B981", "vàng": "#F59E0B", "cam": "#F97316",
+    "tím": "#8B5CF6", "hồng": "#EC4899", "xám": "#6B7280", "nâu": "#92400E",
+    "bạc": "#D1D5DB", "vàng đồng": "#FBBF24", "xanh navy": "#1E3A8A", "kem": "#FDE68A",
+    
+    // Apple Phone Specific Colors
+    "titan tự nhiên": "#B6B5B0", "titan đen": "#4C4C4E", 
+    "titan trắng": "#F2F1ED", "titan xanh": "#2E3B4E",
+    "xanh rêu": "#3D4E41"
+  };
+
+  const normalized = colorName.toLowerCase().trim();
+  // Return mapped, or attempt to use the string directly if valid
+  return colorMap[normalized] || normalized; 
+};
+
 const ProductInteraction = ({
   product,
   selectedSize: initialSize,
@@ -190,7 +218,12 @@ const ProductInteraction = ({
                     }`}
                   title={c}
                 >
-                  <div className="w-8 h-8 rounded-full border border-black/10 shadow-sm" style={{ backgroundColor: c.toLowerCase() }} />
+                  <div className="w-8 h-8 rounded-full border border-black/10 shadow-sm flex items-center justify-center overflow-hidden" style={{ backgroundColor: getColorCode(c) }}>
+                    {/* Fallback pattern/text if color isn't mapped properly or is too unique */}
+                    {!getColorCode(c).startsWith("#") && !getColorCode(c).startsWith("rgb") && !["black","white","red","blue","green","yellow","orange","purple","pink","gray","brown","silver","gold","navy","beige"].includes(getColorCode(c)) && (
+                        <span className="text-[10px] font-bold text-gray-500 uppercase leading-none drop-shadow-sm">{c.substring(0, 2)}</span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>

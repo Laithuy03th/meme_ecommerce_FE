@@ -37,7 +37,7 @@ export const productApi = {
      * PUT /api/v1/admin/products/{id}
      * Update product
      */
-    async update(id: number, data: Partial<CreateProductRequest>): Promise<Product> {
+    async update(id: number, data: CreateProductRequest): Promise<Product> {
         return authenticatedFetch<Product>(`/admin/products/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),

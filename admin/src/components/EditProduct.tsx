@@ -47,6 +47,11 @@ const formSchema = z.object({
     stockQuantity: z.number().min(0, { message: "Stock must be positive!" }),
     thumbnailUrl: z.string().url({ message: "Must be a valid URL!" }),
     imageUrls: z.string().optional(),
+    brand: z.string().optional(),
+    sku: z.string().optional(),
+    weight: z.number().min(0).optional(),
+    isFeatured: z.boolean().optional(),
+    videoUrl: z.string().optional(),
     status: z.enum(["ACTIVE", "INACTIVE", "DRAFT"]),
 });
 
@@ -72,6 +77,11 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
             stockQuantity: product.stockQuantity,
             thumbnailUrl: product.thumbnailUrl,
             imageUrls: product.imageUrls.join(', '),
+            brand: product.brand || "",
+            sku: product.sku || "",
+            weight: product.weight || 0,
+            isFeatured: product.isFeatured || false,
+            videoUrl: product.videoUrl || "",
             status: product.status,
         },
     });
@@ -84,7 +94,11 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
         try {
             setLoadingCategories(true);
             const data = await categoryApi.list();
-            setCategories(data.filter(c => c.status === "ACTIVE"));
+            // Next.js fallback check in case BE returns Page object { content: [...] } instead of direct array
+            const categoryList = Array.isArray(data) ? data : (data as any)?.content || [];
+            if (Array.isArray(categoryList)) {
+                setCategories(categoryList.filter((c: any) => c.status === "ACTIVE"));
+            }
         } catch (error) {
             handleApiError(error);
         } finally {
@@ -111,6 +125,11 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
                 stockQuantity: values.stockQuantity,
                 thumbnailUrl: values.thumbnailUrl,
                 imageUrls: imageUrlsArray,
+                brand: values.brand,
+                sku: values.sku,
+                weight: values.weight,
+                isFeatured: values.isFeatured,
+                videoUrl: values.videoUrl,
                 status: values.status,
             };
 
@@ -278,6 +297,89 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
                                         )}
                                     />
                                 </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="brand"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Brand</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} placeholder="e.g. Apple, Samsung" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="sku"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>SKU</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} placeholder="Product SKU" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="weight"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Weight (kg)</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        type="number"
+                                                        {...field}
+                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="isFeatured"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-8">
+                                                <div className="space-y-0.5">
+                                                    <FormLabel>Featured</FormLabel>
+                                                    <FormDescription>Show on homepage</FormDescription>
+                                                </div>
+                                                <FormControl>
+                                                     <div className="flex items-center space-x-2">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={field.value} 
+                                                            onChange={(e) => field.onChange(e.target.checked)} 
+                                                            className="w-5 h-5 accent-primary" 
+                                                        />
+                                                     </div>
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                <FormField
+                                    control={form.control}
+                                    name="videoUrl"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Video URL</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} placeholder="YouTube or video link" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
                                 <FormField
                                     control={form.control}

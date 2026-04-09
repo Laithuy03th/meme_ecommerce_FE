@@ -19,15 +19,13 @@ export function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // Chưa có refresh token → chưa đăng nhập → redirect về /login
+    // Đã chưa gọi đăng nhập thành công và không ở /login
     if (!refreshToken && !isLoginPage) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // Đã đăng nhập mà vào trang /login → redirect về dashboard
-    if (refreshToken && isLoginPage) {
-        return NextResponse.redirect(new URL("/", request.url));
-    }
+    // Xóa việc ép redirect về / ở middleware, vì refresh có thể đã hết hạn 
+    // khiến client và server bị mismatch trạng thái, gây ra infinite loop loading.
 
     return NextResponse.next();
 }

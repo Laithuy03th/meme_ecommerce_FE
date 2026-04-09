@@ -45,8 +45,10 @@ export function AdminGuard({
             const userData: User = JSON.parse(userStr);
 
             // User is not admin
-            if (!userData.roles?.includes('ADMIN')) {
-                router.push('/'); // Or some error page
+            if (!userData.roles || (!userData.roles.includes('ADMIN') && !userData.roles.includes('ROLE_ADMIN'))) {
+                localStorage.removeItem('user');
+                localStorage.removeItem('accessToken');
+                router.push('/login');
                 return;
             }
 

@@ -5,7 +5,7 @@ import type { OrderSummary, OrderDetail, OrderStatus, UpdateOrderStatusRequest }
 export const orderApi = {
     /**
      * GET /api/v1/admin/orders
-     * List orders with pagination and status filter
+     * List all orders with pagination and optional status filter.
      */
     async list(
         status?: OrderStatus,
@@ -22,27 +22,27 @@ export const orderApi = {
 
     /**
      * GET /api/v1/admin/orders/{orderId}
-     * Get order detail
+     * Get full order detail.
      */
     async getById(orderId: number): Promise<OrderDetail> {
         return authenticatedFetch<OrderDetail>(`/admin/orders/${orderId}`);
     },
 
     /**
-     * PATCH /api/v1/admin/orders/{orderId}/status
-     * Update order status (with State Machine validation)
-     * 
-     * Allowed transitions:
-     * - PENDING → CONFIRMED or CANCELED
-     * - CONFIRMED → PACKED or CANCELED
-     * - PACKED → SHIPPED or CANCELED
-     * - SHIPPED → DELIVERED or RETURN_REQUESTED
-     * - DELIVERED → RETURN_REQUESTED or REFUNDED
-     * - RETURN_REQUESTED → RETURNED or DELIVERED
-     * - RETURNED → REFUNDED
-     * - CANCELED, REFUNDED → TERMINAL (no further changes)
-     * 
-     * @throws ApiError if transition is invalid
+     * PUT /api/v1/admin/orders/{orderId}/status
+     * Update order status — đi qua State Machine validation ở BE.
+     *
+     * Các chuyển trạng thái hợp lệ:
+     * - PENDING          → CONFIRMED | CANCELED
+     * - CONFIRMED        → PACKED    | CANCELED
+     * - PACKED           → SHIPPED   | CANCELED
+     * - SHIPPED          → DELIVERED
+     * - DELIVERED        → RETURN_REQUESTED | REFUNDED
+     * - RETURN_REQUESTED → RETURNED  | DELIVERED (admin từ chối)
+     * - RETURNED         → REFUNDED
+     * - CANCELED, REFUNDED → Terminal (không thể chuyển tiếp)
+     *
+     * @throws ApiError 400/422 nếu transition không hợp lệ
      */
     async updateStatus(orderId: number, newStatus: OrderStatus): Promise<OrderDetail> {
         return authenticatedFetch<OrderDetail>(`/admin/orders/${orderId}/status`, {
@@ -52,11 +52,24 @@ export const orderApi = {
     },
 
     /**
-     * PUT /api/v1/admin/orders/{id}/return/approve
-     * Approve return request
+     * PUT /api/v1/admin/orders/{orderId}/return/approve
+     * Admin duyệt yêu cầu trả hàng: RETURN_REQUESTED → RETURNED (tự động hoàn stock).
+     *
+     * Fix: Trả về OrderDetail thay vì void —
+     * BE luôn trả body đầy đủ, dùng data mới để update UI ngay mà không cần gọi thêm getById().
      */
-    async approveReturn(orderId: number): Promise<void> {
-        return authenticatedFetch<void>(`/admin/orders/${orderId}/return/approve`, {
+    async approveReturn(orderId: number): Promise<OrderDetail> {
+        return authenticatedFetch<OrderDetail>(`/admin/orders/${orderId}/return/approve`, {
+            method: 'PUT',
+        });
+    },
+
+    /**
+     * PUT /api/v1/admin/orders/{orderId}/refund
+     * Admin xác nhận đã hoàn tiền cho khách: RETURNED → REFUNDED.
+     */
+    async refundOrder(orderId: number): Promise<OrderDetail> {
+        return authenticatedFetch<OrderDetail>(`/admin/orders/${orderId}/refund`, {
             method: 'PUT',
         });
     },

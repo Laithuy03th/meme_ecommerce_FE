@@ -3,6 +3,15 @@ import { BaseEntity } from "./common";
 export type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'DRAFT';
 
 export interface Product extends BaseEntity {
+    brand?: string;
+    sku?: string;
+    weight?: number;
+    isFeatured?: boolean;
+    videoUrl?: string;
+    averageRating?: number;
+    reviewCount?: number;
+    soldCount?: number;
+    viewCount?: number;
     name: string;
     slug: string;
     shortDesc: string;
@@ -18,6 +27,11 @@ export interface Product extends BaseEntity {
 }
 
 export interface CreateProductRequest {
+    brand?: string;
+    sku?: string;
+    weight?: number;
+    isFeatured?: boolean;
+    videoUrl?: string;
     name: string;
     slug?: string;
     shortDesc: string;

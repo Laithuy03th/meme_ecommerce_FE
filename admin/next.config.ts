@@ -9,6 +9,18 @@ const nextConfig: NextConfig = {
         hostname: "images.pexels.com",
       },
       {
+        protocol: 'https',
+        hostname: 'www.apple.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'news.samsung.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'us.laneige.com',
+      },
+      {
         protocol: "https",
         hostname: "images.unsplash.com",
       },

@@ -3,9 +3,9 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
     // Middleware chạy trên Edge runtime — KHÔNG có localStorage.
-    // Dùng "refreshToken" cookie (HttpOnly, được BE set khi login thành công).
-    // Access Token nằm trong localStorage -> Middleware KHÔNG đọc được.
-    const refreshToken = request.cookies.get("refreshToken")?.value;
+    // Admin dùng cookie "adminRefreshToken" (KHÁC với "refreshToken" của Client app).
+    // Điều này đảm bảo session Admin và Client hoàn toàn tách biệt trên cùng localhost.
+    const adminRefreshToken = request.cookies.get("adminRefreshToken")?.value;
     const { pathname } = request.nextUrl;
 
     const isLoginPage = pathname === "/login";
@@ -19,8 +19,8 @@ export function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // Đã chưa gọi đăng nhập thành công và không ở /login
-    if (!refreshToken && !isLoginPage) {
+    // Đã chưa gọi đăng nhập Admin thành công và không ở /login
+    if (!adminRefreshToken && !isLoginPage) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 

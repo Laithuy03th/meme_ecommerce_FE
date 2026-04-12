@@ -30,10 +30,9 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 
 
 const refreshToken = async (): Promise<{ accessToken: string; user?: any }> => {
-    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+    const res = await fetch(`${BASE_URL}/admin/auth/refresh`, {  // Admin-specific endpoint
         method: "POST",
-        credentials: "include", // Bắt buộc: gửi HttpOnly Cookie lên
-        // Không có body, không có Content-Type — BE chỉ cần Cookie
+        credentials: "include", // Sends "adminRefreshToken" cookie (NOT "refreshToken")
     });
 
     if (!res.ok) {

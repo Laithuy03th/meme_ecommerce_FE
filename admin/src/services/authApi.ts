@@ -42,9 +42,9 @@ export interface UserType {
 export const loginFullResponse = async (
     data: { email: string; password: string }
 ): Promise<Response> => {
-    return fetch(`${BASE_URL}/auth/login`, {
+    return fetch(`${BASE_URL}/admin/auth/login`, {  // Admin-specific endpoint
         method: "POST",
-        credentials: "include", // Bắt buộc để nhận cookie từ BE
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
     });
@@ -103,15 +103,13 @@ export const register = async (data: {
 // (Dùng nội bộ trong api.ts — hàm này chỉ để tái sử dụng nếu cần)
 // ================================================================
 export const refreshAccessToken = async (): Promise<LoginResponse> => {
-    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+    const res = await fetch(`${BASE_URL}/admin/auth/refresh`, {  // Admin-specific endpoint
         method: "POST",
-        credentials: "include", // Bắt buộc: gửi HttpOnly Cookie đi
-        // Không body, không Content-Type — BE chỉ cần Cookie
+        credentials: "include", // Sends "adminRefreshToken" cookie (NOT "refreshToken")
     });
 
     if (!res.ok) {
-        // 401 = Refresh Token hết hạn/không hợp lệ -> cần login lại
-        throw new Error("Refresh token expired. Please login again.");
+        throw new Error("Admin refresh token expired. Please login again.");
     }
 
     return res.json();
@@ -133,15 +131,13 @@ export const logout = async (accessToken?: string): Promise<void> => {
             headers["Authorization"] = `Bearer ${accessToken}`;
         }
 
-        await fetch(`${BASE_URL}/auth/logout`, {
+        await fetch(`${BASE_URL}/admin/auth/logout`, {  // Admin-specific endpoint
             method: "POST",
-            credentials: "include", // Bắt buộc: gửi Cookie để BE xóa Refresh Token
+            credentials: "include", // Sends "adminRefreshToken" cookie to BE for deletion
             headers,
-            // Không gửi body — BE không cần
         });
     } catch (error) {
-        // Logout luôn "thành công" về mặt UX dù có lỗi mạng
-        console.error("Logout request failed (ignored):", error);
+        console.error("Admin logout request failed (ignored):", error);
     }
 };
 

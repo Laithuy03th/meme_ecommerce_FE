@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { orderApi } from "@/services/orderApi";
 import { handleApiError } from "@/lib/error-handler";
 import type { OrderDetail, OrderStatus } from "@/types/order";
@@ -14,7 +14,8 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
+export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const [order, setOrder] = useState<OrderDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
@@ -27,7 +28,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     const loadOrder = async () => {
         try {
             setLoading(true);
-            const data = await orderApi.getById(parseInt(params.id));
+            const data = await orderApi.getById(parseInt(id));
             setOrder(data);
         } catch (error) {
             handleApiError(error);

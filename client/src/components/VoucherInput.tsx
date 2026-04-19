@@ -170,9 +170,10 @@ export default function VoucherInput({ cartTotal, onVoucherApplied }: VoucherInp
 
                     <div className="grid gap-3 max-h-60 overflow-y-auto pr-1 customize-scrollbar">
                         {availableVouchers.map((voucher) => {
-                            const isEligible = cartTotal >= voucher.minOrderAmount;
-                            const percentDisplay = voucher.discountType === 'PERCENT' ? `${voucher.discountValue}%` : null;
-                            const amountDisplay = voucher.discountType === 'FIXED_AMOUNT' ? `${voucher.discountValue.toLocaleString('vi-VN')}₫` : null;
+                            const minOrder = voucher.minOrderAmount ?? 0;
+                            const isEligible = cartTotal >= minOrder;
+                            const percentDisplay = voucher.discountType === 'PERCENT' ? `${voucher.discountValue ?? 0}%` : null;
+                            const amountDisplay = voucher.discountType === 'FIXED_AMOUNT' ? `${(voucher.discountValue ?? 0).toLocaleString('vi-VN')}₫` : null;
 
                             return (
                                 <div
@@ -204,7 +205,7 @@ export default function VoucherInput({ cartTotal, onVoucherApplied }: VoucherInp
                                             )}
                                         </div>
                                         <p className="text-xs text-gray-500 line-clamp-1">
-                                            Đơn tối thiểu {voucher.minOrderAmount.toLocaleString('vi-VN')}₫
+                                            Đơn tối thiểu {(voucher.minOrderAmount ?? 0).toLocaleString('vi-VN')}₫
                                         </p>
                                         <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-400">
                                             <CalendarDays className="w-3 h-3" />

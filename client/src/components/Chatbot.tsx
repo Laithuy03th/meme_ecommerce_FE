@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Send, MessageCircle, Loader2, RotateCcw, Sparkles } from 'lucide-react';
+import { X, Send, MessageCircle, Loader2, Trash2, Sparkles } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { sendChatMessage, getChatHistory, getChatSuggestions } from '@/services/api/chatbotApi';
 import { ChatMessage, ChatSuggestion } from '@/types/chatbot';
 import { useAuthStore } from '@/stores/authStore';
@@ -58,11 +59,11 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
 
     const initializeSession = async () => {
         // Get or create sessionId
-        let sid = sessionStorage.getItem('chatbot_session_id');
+        let sid = localStorage.getItem('chatbot_session_id');
 
         if (!sid) {
             sid = generateSessionId();
-            sessionStorage.setItem('chatbot_session_id', sid);
+            localStorage.setItem('chatbot_session_id', sid);
             console.log('🆕 New chat session:', sid);
         } else {
             console.log('♻️ Restored session:', sid);
@@ -202,10 +203,12 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
     };
 
     const handleResetSession = () => {
-        sessionStorage.removeItem('chatbot_session_id');
-        setMessages([]);
-        setShowWelcome(true);
-        initializeSession();
+        if (window.confirm('Bạn có chắc chắn muốn xóa lịch sử hiện tại và bắt đầu cuộc hội thoại mới không?')) {
+            localStorage.removeItem('chatbot_session_id');
+            setMessages([]);
+            setShowWelcome(true);
+            initializeSession();
+        }
     };
 
     const handleSuggestionClick = (title: string) => {
@@ -240,14 +243,15 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={handleResetSession}
-                                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                                title="Cuộc hội thoại mới"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm hover:bg-white/20 rounded-lg transition-colors font-medium"
+                                title="Xóa lịch sử hiện tại và bắt đầu chat mới"
                             >
-                                <RotateCcw className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" />
+                                <span className="hidden sm:inline">Dọn dẹp</span>
                             </button>
                             <button
                                 onClick={() => handleToggleChat(false)}
-                                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -298,37 +302,50 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                         {messages.map((msg, idx) => (
                             <div
                                 key={msg.id || idx}
-                                className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                                className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
                             >
+                                {msg.type === 'bot' && (
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mr-2 flex-shrink-0 shadow-sm mt-auto">
+                                        <Sparkles className="w-4 h-4 text-white" />
+                                    </div>
+                                )}
                                 <div
-                                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.type === 'user'
-                                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-none'
-                                        : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
+                                    className={`max-w-[80%] px-4 py-3 ${msg.type === 'user'
+                                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl rounded-br-sm shadow-md'
+                                        : 'bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-bl-sm shadow-sm'
                                         }`}
                                 >
-                                    <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                                        {msg.content}
+                                    <div className="text-sm leading-relaxed">
+                                        {msg.type === 'bot' ? (
+                                            <div className="markdown-body space-y-2 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5 [&>h3]:font-bold [&>h3]:text-lg [&>p>strong]:font-bold">
+                                                <ReactMarkdown>
+                                                    {msg.content || ""}
+                                                </ReactMarkdown>
+                                            </div>
+                                        ) : (
+                                            <div className="whitespace-pre-wrap">{msg.content}</div>
+                                        )}
                                     </div>
 
                                     {/* Quick replies */}
                                     {msg.quickReplies && msg.quickReplies.length > 0 && (
-                                        <div className="mt-3 space-y-2">
+                                        <div className="mt-4 flex flex-wrap gap-2">
                                             {msg.quickReplies.map((reply, i) => (
                                                 <button
                                                     key={i}
                                                     onClick={() => handleSendMessage(reply.value)}
-                                                    className="block w-full text-left px-3 py-2 bg-gray-50 hover:bg-blue-50 text-blue-600 rounded-lg text-sm transition-colors"
+                                                    className="inline-flex items-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full text-xs font-semibold transition-colors border border-blue-200 shadow-sm"
                                                 >
-                                                    {reply.icon && <span className="mr-2">{reply.icon}</span>}
+                                                    {reply.icon && <span className="mr-1.5">{reply.icon}</span>}
                                                     {reply.label}
                                                 </button>
                                             ))}
                                         </div>
                                     )}
 
-                                    {/* Product Cards (nếu intent = product_inquiry) */}
-                                    {msg.intent === 'product_inquiry' && msg.data?.products && msg.data.products.length > 0 && (
-                                        <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
+                                    {/* Product Cards (nếu intent = product) */}
+                                    {msg.intent === 'product' && msg.data?.products && msg.data.products.length > 0 && (
+                                        <div className="mt-4 flex gap-3 overflow-x-auto pb-3 snap-x">
                                             {msg.data.products.slice(0, 5).map((product: any, i: number) => (
                                                 <a
                                                     key={i}
@@ -356,10 +373,11 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                                         </div>
                                     )}
 
-                                    {/* Order Info (nếu intent = order_tracking) */}
-                                    {msg.intent === 'order_tracking' && msg.data?.order && (
-                                        <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm">
-                                            <div className="grid grid-cols-2 gap-2">
+                                    {/* Order Info (nếu intent = order) */}
+                                    {msg.intent === 'order' && msg.data?.order && (
+                                        <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm shadow-sm relative overflow-hidden">
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                                            <div className="grid grid-cols-2 gap-3">
                                                 <div>
                                                     <span className="text-gray-600">Mã đơn:</span>
                                                     <span className="ml-2 font-mono font-bold">#{msg.data.order.id}</span>
@@ -405,10 +423,11 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                         {/* Typing Indicator */}
                         {isLoading && (
                             <div className="flex justify-start">
-                                <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm">
-                                    <div className="flex items-center gap-2">
-                                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                                        <span className="text-sm text-gray-600">Đang trả lời...</span>
+                                <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none px-4 py-4 shadow-sm w-16">
+                                    <div className="flex space-x-1.5 justify-center items-center h-full">
+                                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></div>
                                     </div>
                                 </div>
                             </div>

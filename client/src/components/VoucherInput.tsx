@@ -18,6 +18,7 @@ export default function VoucherInput({ cartTotal, onVoucherApplied }: VoucherInp
     const [appliedVoucher, setAppliedVoucher] = useState<{
         code: string;
         discount: number;
+        voucher?: VoucherType;
     } | null>(null);
 
     const [availableVouchers, setAvailableVouchers] = useState<VoucherType[]>([]);
@@ -58,6 +59,7 @@ export default function VoucherInput({ cartTotal, onVoucherApplied }: VoucherInp
                 setAppliedVoucher({
                     code: codeToUse.toUpperCase(),
                     discount: result.discountAmount,
+                    voucher: result.voucher,
                 });
                 setVoucherCode(codeToUse.toUpperCase()); // Sync input
                 onVoucherApplied(result.discountAmount, codeToUse.toUpperCase());
@@ -147,6 +149,13 @@ export default function VoucherInput({ cartTotal, onVoucherApplied }: VoucherInp
                                 <p className="text-sm text-emerald-600 mt-0.5">
                                     Đã giảm <span className="font-bold">{appliedVoucher.discount.toLocaleString("vi-VN")}₫</span>
                                 </p>
+                                {appliedVoucher.voucher && (
+                                    <p className="text-xs text-emerald-500 mt-1">
+                                        Đơn tối thiểu {(appliedVoucher.voucher.minOrderAmount ?? 0).toLocaleString("vi-VN")}₫ 
+                                        {appliedVoucher.voucher.discountType === 'PERCENT' && appliedVoucher.voucher.maxDiscountAmount > 0 ? 
+                                            ` - Giảm tối đa ${appliedVoucher.voucher.maxDiscountAmount.toLocaleString("vi-VN")}₫` : ''}
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <button
@@ -204,8 +213,10 @@ export default function VoucherInput({ cartTotal, onVoucherApplied }: VoucherInp
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-xs text-gray-500 line-clamp-1">
+                                        <p className="text-xs text-gray-500 line-clamp-1 mt-1">
                                             Đơn tối thiểu {(voucher.minOrderAmount ?? 0).toLocaleString('vi-VN')}₫
+                                            {voucher.discountType === 'PERCENT' && voucher.maxDiscountAmount > 0 && 
+                                                ` - Giảm tối đa ${voucher.maxDiscountAmount.toLocaleString('vi-VN')}₫`}
                                         </p>
                                         <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-400">
                                             <CalendarDays className="w-3 h-3" />

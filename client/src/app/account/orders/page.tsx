@@ -2,8 +2,9 @@
 
 import { getOrders } from "@/services/api";
 import { OrderType } from "@/types";
-import { ChevronRight, Package, ShoppingBag } from "lucide-react";
+import { ChevronRight, Package, ShoppingBag, Calendar } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { getOrderStatusColor, getOrderStatusLabel } from "@/lib/orderUtils";
 import { useEffect, useState } from "react";
 
@@ -66,29 +67,44 @@ const OrdersPage = () => {
                         key={order.id}
                         className="block border border-gray-200 rounded-xl p-4 hover:border-primary transition-all hover:shadow-md bg-white group"
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                                    <Package className="w-5 h-5 text-gray-500 group-hover:text-primary" />
-                                </div>
-                                <div>
-                                    <span className="font-bold text-gray-900 block">Order #{order.id}</span>
-                                    <span className="text-xs text-gray-500">
-                                        {new Date(order.createdAt).toLocaleDateString()}
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="relative w-16 h-16 bg-gray-50 rounded-lg overflow-hidden border border-gray-100 flex-shrink-0">
+                                {order.firstItemImageUrl ? (
+                                    <Image 
+                                        src={order.firstItemImageUrl} 
+                                        alt="Product" 
+                                        fill 
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <Package className="w-6 h-6 text-gray-300" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="font-bold text-gray-900 truncate">Order #{order.id}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getOrderStatusColor(order.status)}`}>
+                                        {getOrderStatusLabel(order.status)}
                                     </span>
                                 </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <Calendar className="w-3.5 h-3.5" />
+                                    {new Date(order.createdAt).toLocaleDateString("vi-VN")}
+                                    <span className="mx-1">•</span>
+                                    <span>{order.itemCount || 0} sản phẩm</span>
+                                </div>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getOrderStatusColor(order.status)}`}>
-                                {getOrderStatusLabel(order.status)}
-                            </span>
                         </div>
-                        <div className="flex justify-between items-center text-sm border-t border-gray-100 pt-4">
-                            <span className="text-gray-500">{order.items?.length || 0} items</span>
+                        <div className="flex justify-between items-center text-sm border-t border-gray-100 pt-3">
+                            <span className="text-gray-400 text-xs italic">Xem chi tiết đơn hàng</span>
                             <div className="flex items-center gap-2">
                                 <span className="font-bold text-gray-900">{order.totalAmount.toLocaleString('vi-VN')}đ</span>
                                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                             </div>
                         </div>
+
                     </Link>
                 ))}
             </div>

@@ -8,6 +8,7 @@ import { Heart, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { Info } from "lucide-react";
 
 // Map common color names (especially Vietnamese) to valid CSS hex codes
 const getColorCode = (colorName: string) => {
@@ -35,6 +36,40 @@ const getColorCode = (colorName: string) => {
   const normalized = colorName.toLowerCase().trim();
   // Return mapped, or attempt to use the string directly if valid
   return colorMap[normalized] || normalized; 
+};
+
+// Check if category is related to fashion/clothing
+const isFashionCategory = (slug?: string) => {
+  if (!slug) return false;
+  const s = slug.toLowerCase();
+  return s.includes("fashion") || 
+         s.includes("thoi-trang") || 
+         s.includes("ao") || 
+         s.includes("quan") || 
+         s.includes("vay") || 
+         s.includes("clothing") || 
+         s.includes("apparel") ||
+         s.includes("giay") ||
+         s.includes("shoes") ||
+         s.includes("footwear");
+};
+
+// Standard international size mapping for height/weight
+const sizeGuideMapping: Record<string, string> = {
+  // Clothes
+  "S": "Chiều cao 150cm - 160cm, Cân nặng 40kg - 50kg.",
+  "M": "Chiều cao 160cm - 165cm, Cân nặng 50kg - 55kg.",
+  "L": "Chiều cao 165cm - 170cm, Cân nặng 55kg - 60kg.",
+  "XL": "Chiều cao 170cm - 175cm, Cân nặng 60kg - 65kg.",
+  
+  // Shoes (Standard length)
+  "36": "Chiều dài chân ~22.5cm - 23.0cm.",
+  "37": "Chiều dài chân ~23.0cm - 23.5cm.",
+  "38": "Chiều dài chân ~23.5cm - 24.0cm.",
+  "39": "Chiều dài chân ~24.0cm - 24.5cm.",
+  "40": "Chiều dài chân ~24.5cm - 25.0cm.",
+  "41": "Chiều dài chân ~25.0cm - 25.5cm.",
+  "42": "Chiều dài chân ~25.5cm - 26.0cm."
 };
 
 const ProductInteraction = ({
@@ -187,7 +222,42 @@ const ProductInteraction = ({
         {/* SIZE */}
         {product.sizes && product.sizes.length > 0 && (
           <div className="space-y-2">
-            <span className="text-sm font-medium text-gray-900">Select Size</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-900">Select Size</span>
+              {isFashionCategory(product.categorySlug) && (
+                <div className="group relative flex items-center gap-1 text-xs text-primary cursor-pointer hover:underline">
+                  <Info className="w-3 h-3" />
+                  <span>Size Guide</span>
+                  <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block w-72 p-4 bg-white border border-gray-100 shadow-2xl rounded-2xl z-50 text-gray-700 animate-in fade-in zoom-in-95 duration-200">
+                    <p className="font-bold mb-3 border-b pb-2 text-primary flex items-center gap-2">
+                      <Info className="w-4 h-4" /> Bảng Quy Đổi Kích Cỡ
+                    </p>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-[11px] font-bold text-gray-900 mb-1 uppercase tracking-wider">Quần áo (Áo, Váy)</p>
+                        <ul className="space-y-1 text-[10px]">
+                          <li><span className="font-semibold text-gray-600">S:</span> 150-160cm, 40-50kg</li>
+                          <li><span className="font-semibold text-gray-600">M:</span> 160-165cm, 50-55kg</li>
+                          <li><span className="font-semibold text-gray-600">L:</span> 165-170cm, 55-60kg</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-bold text-gray-900 mb-1 uppercase tracking-wider">Giày dép (Chiều dài chân)</p>
+                        <ul className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
+                          <li><span className="font-semibold text-gray-600">36-37:</span> 22.5 - 23.5cm</li>
+                          <li><span className="font-semibold text-gray-600">38-39:</span> 23.5 - 24.5cm</li>
+                          <li><span className="font-semibold text-gray-600">40-41:</span> 24.5 - 25.5cm</li>
+                          <li><span className="font-semibold text-gray-600">42:</span> 25.5 - 26cm</li>
+                        </ul>
+                      </div>
+                    </div>
+                    <p className="mt-3 pt-2 border-t text-[9px] text-gray-400 italic text-center">
+                      *Thông số chỉ mang tính chất tham khảo
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {product.sizes.map((s) => (
                 <button
@@ -202,6 +272,17 @@ const ProductInteraction = ({
                 </button>
               ))}
             </div>
+            
+            {/* Show details for selected size if it's a fashion category */}
+            {isFashionCategory(product.categorySlug) && size && sizeGuideMapping[size.toUpperCase()] && (
+              <div className="mt-2 text-xs text-gray-600 bg-blue-50/50 p-2.5 rounded-lg border border-blue-100 flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+                <p>
+                  <span className="font-semibold text-blue-900">Size {size.toUpperCase()}:</span>{" "}
+                  {sizeGuideMapping[size.toUpperCase()]}
+                </p>
+              </div>
+            )}
           </div>
         )}
 

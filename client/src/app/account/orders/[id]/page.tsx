@@ -2,7 +2,7 @@
 
 import { cancelOrder, getOrder, returnOrder } from "@/services/api";
 import { OrderType, OrderItemType } from "@/types";
-import { ArrowLeft, CheckCircle, Clock, CreditCard, MapPin, Package } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, CreditCard, MapPin, Package, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ORDER_STATUS, getOrderStatusColor, getOrderStatusLabel } from "@/lib/orderUtils";
@@ -230,14 +230,21 @@ const OrderDetailPage = () => {
             )}
 
             {/* STATUS BANNERS - SHOPEE STYLE */}
+
             {order.status === ORDER_STATUS.DELIVERED && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                <div className={`${order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? 'bg-gray-50 border-gray-200' : 'bg-emerald-50 border-emerald-200'} border rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2`}>
+                    <CheckCircle2 className={`w-5 h-5 ${order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? 'text-gray-400' : 'text-emerald-600'} mt-0.5 flex-shrink-0`} />
                     <div>
-                        <h4 className="font-bold text-emerald-800">Giao hàng thành công</h4>
-                        <p className="text-sm text-emerald-600 mt-1">
-                            Vui lòng kiểm tra hàng. Nếu có vấn đề, hãy yêu cầu <b>Trả hàng/Hoàn tiền</b> trước ngày {new Date(new Date(order.createdAt).setDate(new Date(order.createdAt).getDate() + 3)).toLocaleDateString()}.
-                            <br />Nếu bạn hài lòng, hãy bấm <b>Đánh giá</b> để nhận xu tích lũy nhé!
+                        <h4 className={`font-bold ${order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? 'text-gray-800' : 'text-emerald-800'}`}>Giao hàng thành công</h4>
+                        <p className={`text-sm ${order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? 'text-gray-500' : 'text-emerald-600'} mt-1`}>
+                            {order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? (
+                                <>Đã quá thời gian 10 ngày để yêu cầu Trả hàng / Hoàn tiền. Nếu sản phẩm có lỗi phát sinh sau này, vui lòng liên hệ bộ phận Bảo hành.</>
+                            ) : (
+                                <>
+                                    Vui lòng kiểm tra hàng. Nếu có vấn đề, hãy yêu cầu <b>Trả hàng/Hoàn tiền</b> trước ngày {order.deliveredAt ? new Date(new Date(order.deliveredAt).setDate(new Date(order.deliveredAt).getDate() + 10)).toLocaleDateString() : "hạn định"}.
+                                    <br />Nếu bạn hài lòng, hãy bấm <b>Đánh giá</b> để nhận xu tích lũy nhé!
+                                </>
+                            )}
                         </p>
                     </div>
                 </div>
@@ -337,9 +344,17 @@ const OrderDetailPage = () => {
                                                         Đánh giá
                                                     </button>
                                                 ) : (
-                                                    <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 flex items-center gap-1">
-                                                        <CheckCircle2 className="w-3.5 h-3.5" /> Đã đánh giá
-                                                    </span>
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 flex items-center gap-1">
+                                                            <CheckCircle2 className="w-3.5 h-3.5" /> Đã đánh giá
+                                                        </span>
+                                                        <button 
+                                                            onClick={handleReOrderClick}
+                                                            className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                                                        >
+                                                            <ShoppingBag className="w-3 h-3" /> Mua lại
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </>
                                         )}
@@ -371,17 +386,26 @@ const OrderDetailPage = () => {
                         {/* 3. STATE: DELIVERED (The Buffer Zone) */}
                         {order.status === ORDER_STATUS.DELIVERED && !isReturned && (
                             <>
-                                {/* Return Action: Only if NO item reviewed yet */}
-                                {!order.items?.some(i => i.hasReviewed) ? (
+                                {/* Return Action: Only if NOT item reviewed yet AND not expired */}
+                                {!order.items?.some(i => i.hasReviewed || localReviewedIds.has(i.id)) ? (
                                     <div className="flex flex-col gap-2 w-full md:w-auto">
-                                        <button
-                                            onClick={handleReturn}
-                                            className="w-full px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition-all cursor-pointer"
-                                        >
-                                            Yêu cầu Trả hàng / Hoàn tiền
-                                        </button>
+                                        {order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? (
+                                            <div className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-2.5 flex items-center gap-2 text-gray-500 opacity-70">
+                                                <AlertTriangle className="w-4 h-4" />
+                                                <span className="font-bold text-sm text-gray-400">Đã quá thời gian trả hàng</span>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={handleReturn}
+                                                className="w-full px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition-all cursor-pointer"
+                                            >
+                                                Yêu cầu Trả hàng / Hoàn tiền
+                                            </button>
+                                        )}
                                         <p className="text-xs text-gray-400 italic">
-                                            *Lưu ý: Bạn sẽ mất quyền trả hàng nếu đã đánh giá sản phẩm.
+                                            {order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) 
+                                              ? "*Bạn đã quá hạn 10 ngày để yêu cầu hoàn tiền cho đơn hàng này."
+                                              : "*Lưu ý: Bạn sẽ mất quyền trả hàng nếu đã đánh giá sản phẩm."}
                                         </p>
                                     </div>
                                 ) : (
@@ -394,7 +418,7 @@ const OrderDetailPage = () => {
                         )}
 
                         {/* 4. STATE: Final States for Re-ordering */}
-                        {[ORDER_STATUS.CANCELED, ORDER_STATUS.RETURNED, ORDER_STATUS.REFUNDED].includes(order.status) && (
+                        {[ORDER_STATUS.CANCELED, ORDER_STATUS.RETURNED, ORDER_STATUS.REFUNDED, ORDER_STATUS.DELIVERED].includes(order.status) && (
                             <button
                                 onClick={handleReOrderClick}
                                 className="w-full md:w-auto px-8 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark shadow-lg shadow-primary/30 transition-all cursor-pointer"

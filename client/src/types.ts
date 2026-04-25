@@ -279,7 +279,9 @@ export type OrderType = {
   subtotal?: number; // Added from GET /orders/1 response
   note?: string;
   createdAt: string;
+  deliveredAt?: string;
   items?: OrderItemType[];
+
   timeline?: OrderTimelineType[];
   shippingAddress?: {
     fullName: string;

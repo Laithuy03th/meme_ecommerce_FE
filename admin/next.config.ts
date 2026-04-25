@@ -35,7 +35,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "via.placeholder.com",
-      }
+      },
+      {
+        protocol: "https",
+        hostname: "unsplash.com", // Thêm dòng này để khớp với cái link bạn đang dán vào
+      },
     ]
   }
 };

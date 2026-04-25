@@ -18,12 +18,7 @@ export const reviewApi = {
     async reply(id: number, content: string): Promise<void> {
         return authenticatedFetch<void>(`/products/reviews/${id}/reply`, {
             method: 'POST',
-            body: JSON.stringify({ content }), // Assuming body uses 'content' or 'reply'? User didn't specify body key, but usually it's content or message.
-            // User just said: POST /api/v1/products/reviews/{reviewId}/reply
-            // Common sense implies a body. I'll stick with 'content' or whatever existing code used but existing code used { reply: string }.
-            // The user didn't specify the body structure for reply. I will assume { comment: string } or { reply: string }. 
-            // Existing code used `reply`. I'll keep `reply` key if I can, but usually standard is comment.
-            // Let's stick to what was there: { reply }.
+            body: JSON.stringify({ reply: content }),
         });
     },
 

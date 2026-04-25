@@ -27,8 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "./ui/button";
-import { User } from "@/services/userApi";
-import { updatePasswordAction, updateRolesAction, updateStatusAction } from "@/actions/userActions";
+import { User, userApi } from "@/services/userApi";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 
@@ -67,8 +66,7 @@ const EditUser = ({ user }: EditUserProps) => {
     try {
       // Update Status
       if (values.status !== user.status) {
-        const res = await updateStatusAction(user.id, values.status);
-        if (!res.success) throw new Error(res.message);
+        await userApi.updateUserStatus(user.id, values.status);
       }
 
       // Update Roles
@@ -76,14 +74,12 @@ const EditUser = ({ user }: EditUserProps) => {
       const sortedCurrentRoles = [...user.roles].sort();
       const sortedNewRoles = [...values.roles].sort();
       if (JSON.stringify(sortedCurrentRoles) !== JSON.stringify(sortedNewRoles)) {
-        const res = await updateRolesAction(user.id, values.roles);
-        if (!res.success) throw new Error(res.message);
+        await userApi.updateUserRoles(user.id, values.roles);
       }
 
       // Update Password
       if (values.password && values.password.length >= 6) {
-        const res = await updatePasswordAction(user.id, values.password);
-        if (!res.success) throw new Error(res.message);
+        await userApi.updateUserPassword(user.id, values.password);
       }
 
       // toast.success("User updated successfully");

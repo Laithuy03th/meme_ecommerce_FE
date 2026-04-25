@@ -29,7 +29,7 @@ import {
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { ScrollArea } from "./ui/scroll-area";
-import { createProductAction } from "@/actions/productActions";
+import { productApi } from "@/services/productApi";
 import { handleApiError } from "@/lib/error-handler";
 import { useState, useEffect } from "react";
 import type { Category } from "@/types/category";
@@ -94,7 +94,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
             // Next.js fallback check in case BE returns Page object { content: [...] } instead of direct array
             const categoryList = Array.isArray(data) ? data : (data as any)?.content || [];
             if (Array.isArray(categoryList)) {
-                setCategories(categoryList.filter((c: any) => c.status === "ACTIVE"));
+                setCategories(categoryList);
             }
         } catch (error) {
             handleApiError(error);
@@ -130,15 +130,10 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                 status: values.status,
             };
 
-            const result = await createProductAction(productData);
-
-            if (result.success) {
-                alert("Product created successfully!");
-                form.reset();
-                onSuccess?.();
-            } else {
-                throw new Error(result.message);
-            }
+            await productApi.create(productData);
+            alert("Product created successfully!");
+            form.reset();
+            onSuccess?.();
         } catch (error) {
             handleApiError(error);
         } finally {
@@ -352,14 +347,14 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                                     <FormDescription>Show on homepage</FormDescription>
                                                 </div>
                                                 <FormControl>
-                                                     <div className="flex items-center space-x-2">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={field.value} 
-                                                            onChange={(e) => field.onChange(e.target.checked)} 
-                                                            className="w-5 h-5 accent-primary" 
+                                                    <div className="flex items-center space-x-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={field.value}
+                                                            onChange={(e) => field.onChange(e.target.checked)}
+                                                            className="w-5 h-5 accent-primary"
                                                         />
-                                                     </div>
+                                                    </div>
                                                 </FormControl>
                                             </FormItem>
                                         )}

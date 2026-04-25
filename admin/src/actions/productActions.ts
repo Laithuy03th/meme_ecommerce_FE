@@ -1,6 +1,7 @@
 "use server";
 
-import { productApi, CreateProductRequest } from "@/services/productApi";
+import { productApi } from "@/services/productApi";
+import type { CreateProductRequest } from "@/services/productApi";
 import { revalidatePath } from "next/cache";
 
 export async function createProductAction(data: CreateProductRequest) {
@@ -13,7 +14,7 @@ export async function createProductAction(data: CreateProductRequest) {
     }
 }
 
-export async function updateProductAction(id: number, data: Partial<CreateProductRequest>) {
+export async function updateProductAction(id: number, data: CreateProductRequest) {
     try {
         await productApi.update(id, data);
         revalidatePath("/products");

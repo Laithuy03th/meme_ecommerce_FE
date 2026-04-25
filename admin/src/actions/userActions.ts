@@ -1,6 +1,7 @@
 "use server";
 
-import { userApi, CreateUserRequest } from "@/services/userApi";
+import { userApi } from "@/services/userApi";
+import type { CreateUserRequest } from "@/services/userApi";
 import { revalidatePath } from "next/cache";
 
 export async function updateStatusAction(id: number, status: "ACTIVE" | "INACTIVE" | "LOCKED") {

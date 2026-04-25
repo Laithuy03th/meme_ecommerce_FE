@@ -20,7 +20,7 @@ import {
 } from "./ui/form";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { createUserAction } from "@/actions/userActions";
+import { userApi } from "@/services/userApi";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -51,13 +51,9 @@ const AddUser = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      const res = await createUserAction(values);
-      if (res.success) {
-        alert("User created successfully");
-        form.reset();
-      } else {
-        throw new Error(res.message);
-      }
+      await userApi.createUser(values);
+      alert("User created successfully");
+      form.reset();
     } catch (error: any) {
       alert(error.message || "Failed to create user");
     } finally {

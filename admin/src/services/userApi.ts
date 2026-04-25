@@ -118,13 +118,13 @@ export const userApi = {
     },
 
     /**
-     * PUT /api/v1/admin/users/{id}/lock
-     * Lock/Unlock user
+     * PATCH /api/v1/admin/users/{id}/status
+     * Update user status
      */
-    async lockUser(id: number, locked: boolean): Promise<void> {
-        return authenticatedFetch<void>(`/admin/users/${id}/lock`, {
-            method: 'PUT',
-            body: JSON.stringify({ locked }),
+    async updateUserStatus(id: number, status: string): Promise<User> {
+        return authenticatedFetch<User>(`/admin/users/${id}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status }),
         });
     },
 

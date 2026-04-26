@@ -36,6 +36,8 @@ import type { Category } from "@/types/category";
 import type { Product } from "@/types/product";
 import { categoryApi } from "@/services/categoryApi";
 import { Loader2 } from "lucide-react";
+import ImageUploader from "./ImageUploader";
+import MultiImageUploader from "./MultiImageUploader";
 
 const formSchema = z.object({
     name: z.string().min(1, { message: "Product name is required!" }),
@@ -145,7 +147,7 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
 
     if (loadingCategories) {
         return (
-            <SheetContent>
+            <SheetContent className="sm:max-w-2xl">
                 <SheetHeader>
                     <SheetTitle className="sr-only">Loading</SheetTitle>
                     <SheetDescription className="sr-only">
@@ -160,7 +162,7 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
     }
 
     return (
-        <SheetContent className="overflow-y-auto">
+        <SheetContent className="overflow-y-auto sm:max-w-2xl">
             <ScrollArea className="h-full pr-4">
                 <SheetHeader>
                     <SheetTitle className="mb-4">Edit Product</SheetTitle>
@@ -381,11 +383,15 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
                                     name="thumbnailUrl"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Thumbnail URL *</FormLabel>
+                                            <FormLabel>Thumbnail Image *</FormLabel>
                                             <FormControl>
-                                                <Input {...field} type="url" />
+                                                <ImageUploader
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    onRemove={() => field.onChange("")}
+                                                />
                                             </FormControl>
-                                            <FormDescription>Main product image</FormDescription>
+                                            <FormDescription>Upload or paste main product image URL</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -398,14 +404,13 @@ const EditProduct = ({ product, onSuccess }: EditProductProps) => {
                                         <FormItem>
                                             <FormLabel>Additional Images</FormLabel>
                                             <FormControl>
-                                                <Textarea
-                                                    {...field}
-                                                    rows={3}
-                                                    placeholder="https://image1.jpg, https://image2.jpg"
+                                                <MultiImageUploader
+                                                    value={field.value}
+                                                    onChange={field.onChange}
                                                 />
                                             </FormControl>
                                             <FormDescription>
-                                                Comma-separated URLs for additional images
+                                                Upload or add URLs for additional images
                                             </FormDescription>
                                             <FormMessage />
                                         </FormItem>

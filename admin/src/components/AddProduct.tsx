@@ -35,6 +35,8 @@ import { useState, useEffect } from "react";
 import type { Category } from "@/types/category";
 import { categoryApi } from "@/services/categoryApi";
 import { Loader2 } from "lucide-react";
+import ImageUploader from "./ImageUploader";
+import MultiImageUploader from "./MultiImageUploader";
 
 const formSchema = z.object({
     name: z.string().min(1, { message: "Product name is required!" }),
@@ -143,7 +145,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
 
     if (loadingCategories) {
         return (
-            <SheetContent>
+            <SheetContent className="sm:max-w-2xl">
                 <SheetHeader>
                     <SheetTitle className="sr-only">Loading</SheetTitle>
                     <SheetDescription className="sr-only">
@@ -158,7 +160,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
     }
 
     return (
-        <SheetContent className="overflow-y-auto w-[400px] sm:w-[540px]">
+        <SheetContent className="overflow-y-auto sm:max-w-2xl">
             <ScrollArea className="h-full pr-4">
                 <SheetHeader>
                     <SheetTitle className="mb-4">Add New Product</SheetTitle>
@@ -381,39 +383,13 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                         <FormItem>
                                             <FormLabel>Thumbnail Image *</FormLabel>
                                             <FormControl>
-                                                <div className="space-y-2">
-                                                    <Input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={async (e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (file) {
-                                                                try {
-                                                                    // Using fileApi defined in services
-                                                                    const { fileApi } = await import("@/services/fileApi");
-                                                                    const res = await fileApi.uploadImage(file);
-                                                                    field.onChange(res.fileUrl);
-                                                                } catch (error) {
-                                                                    console.error("Upload failed", error);
-                                                                    alert("Upload failed");
-                                                                }
-                                                            }
-                                                        }}
-                                                    />
-                                                    {field.value && (
-                                                        <div className="relative w-32 h-32 mt-2 border rounded-md overflow-hidden">
-                                                            <img
-                                                                src={field.value}
-                                                                alt="Thumbnail preview"
-                                                                className="object-cover w-full h-full"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                    {/* Hidden input to store the URL if needed explicitly, but field.value tracks it */}
-                                                    <Input {...field} className="hidden" />
-                                                </div>
+                                                <ImageUploader
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    onRemove={() => field.onChange("")}
+                                                />
                                             </FormControl>
-                                            <FormDescription>Upload main product image</FormDescription>
+                                            <FormDescription>Upload or paste main product image URL</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -426,14 +402,13 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                         <FormItem>
                                             <FormLabel>Additional Images</FormLabel>
                                             <FormControl>
-                                                <Textarea
-                                                    {...field}
-                                                    rows={3}
-                                                    placeholder="https://image1.jpg, https://image2.jpg"
+                                                <MultiImageUploader
+                                                    value={field.value}
+                                                    onChange={field.onChange}
                                                 />
                                             </FormControl>
                                             <FormDescription>
-                                                Comma-separated URLs for additional images
+                                                Upload or add URLs for additional images
                                             </FormDescription>
                                             <FormMessage />
                                         </FormItem>

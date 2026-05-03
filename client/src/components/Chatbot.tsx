@@ -77,42 +77,50 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
         try {
             const history = await getChatHistory(sid);
 
-            if (history.length > 0) {
-                const loadedMessages: ChatMessage[] = [];
+            // Guard: nếu API trả về không phải mảng hợp lệ thì bỏ qua
+            if (!Array.isArray(history) || history.length === 0) return;
 
-                history.forEach((h) => {
-                    const isBotRow =
-                        h.messageType === "BOT" ||
-                        (typeof h.response === "string" && h.response.trim().length > 0);
+            const loadedMessages: ChatMessage[] = [];
 
-                    if (isBotRow) {
-                        loadedMessages.push({
-                            id: `${h.id}_bot`,
-                            type: "bot",
-                            content: h.response || "",
-                            timestamp: new Date(h.createdAt),
-                            sessionId: h.sessionId,
-                            intent: h.intent as any,
-                        });
-                    } else if (h.message) {
-                        loadedMessages.push({
-                            id: `${h.id}_user`,
-                            type: "user",
-                            content: h.message,
-                            timestamp: new Date(h.createdAt),
-                            sessionId: h.sessionId,
-                        });
-                    }
-                });
+            history.forEach((h: any) => {
+                if (!h || typeof h !== "object") return; // skip null/invalid items
 
-                loadedMessages.sort(
-                    (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
-                );
+                const isBotRow =
+                    h.role === "bot" || h.messageType === "BOT" ||
+                    (typeof h.response === "string" && h.response.trim().length > 0) ||
+                    (typeof h.content === "string" && h.role === "bot");
 
-                setMessages(loadedMessages);
-                setShowWelcome(false);
-                console.log(`📜 Loaded ${loadedMessages.length} messages`);
-            }
+                const baseId = h.id ? String(h.id) : crypto.randomUUID();
+
+                if (isBotRow) {
+                    loadedMessages.push({
+                        id: `${baseId}_bot`,
+                        type: "bot",
+                        content: h.content || h.response || "",
+                        timestamp: h.createdAt ? new Date(h.createdAt) : new Date(),
+                        sessionId: h.sessionId,
+                        intent: h.intent,
+                        data: h.data,
+                        quickReplies: h.quickReplies,
+                    });
+                } else if (h.role === "user" || h.messageType === "USER" || h.message) {
+                    loadedMessages.push({
+                        id: `${baseId}_user`,
+                        type: "user",
+                        content: h.content || h.message || "",
+                        timestamp: h.createdAt ? new Date(h.createdAt) : new Date(),
+                        sessionId: h.sessionId,
+                    });
+                }
+            });
+
+            loadedMessages.sort(
+                (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+            );
+
+            setMessages(loadedMessages);
+            setShowWelcome(false);
+            console.log(`📜 Loaded ${loadedMessages.length} messages`);
         } catch (error) {
             console.error("Failed to load history:", error);
         }
@@ -193,7 +201,7 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
         setShowWelcome(false);
 
         const userMessage: ChatMessage = {
-            id: `${Date.now()}_user`,
+            id: `${crypto.randomUUID()}_user`,
             type: "user",
             content: textToSend,
             timestamp: new Date(),
@@ -211,7 +219,7 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
             });
 
             const botMessage: ChatMessage = {
-                id: `${Date.now()}_bot`,
+                id: `${crypto.randomUUID()}_bot`,
                 type: "bot",
                 content: response.response,
                 timestamp: new Date(),
@@ -397,9 +405,9 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                                         msg.data.products.length > 0 && (
                                             <div className="mt-4">
                                                 <div className="flex gap-3 overflow-x-auto pb-3 snap-x">
-                                                    {msg.data.products.slice(0, 5).map((product, i) => (
+                                                    {msg.data.products.slice(0, 5).map((product) => (
                                                         <a
-                                                            key={i}
+                                                            key={product.id ?? product.slug ?? product.name}
                                                             href={`/products/${product.id}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"

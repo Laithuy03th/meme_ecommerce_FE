@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { getSafeImageUrl } from "@/lib/imageUtils";
 import SafeImage from "@/components/SafeImage";
+import { getSettings } from "@/lib/settings";
 
 const CartPage = () => {
   const {
@@ -37,9 +38,14 @@ const CartPage = () => {
   const router = useRouter();
 
   // Calculate totals based on selection
+  const [settings, setSettings] = useState(getSettings());
   const selectedItems = cart.filter(item => selectedItemIds.includes(item.id));
   const selectedSubtotal = selectedItems.reduce((sum, item) => sum + item.totalPrice, 0);
-  const shippingFee = 10; // Hardcoded for now
+  
+  // Calculate shipping fee dynamically
+  const shippingFee = (selectedSubtotal > 0 && selectedSubtotal < settings.shipping.threshold) 
+    ? settings.shipping.fee 
+    : 0;
 
   const discount = appliedVoucher ? appliedVoucher.discountAmount : 0;
   const finalTotal = Math.max(0, selectedSubtotal + shippingFee - discount);

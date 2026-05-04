@@ -9,6 +9,7 @@ import { usePathname, useRouter } from "next/navigation";
 import useWishlistStore from "@/stores/wishlistStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useEffect, useState } from "react";
+import NotificationBell from "./NotificationBell";
 
 interface NavbarProps {
   isChatOpen: boolean;
@@ -99,6 +100,8 @@ const Navbar = ({ isChatOpen, onChatToggle }: NavbarProps) => {
               <div className="hover:scale-105 transition-transform duration-300">
                 <ShoppingCartIcon />
               </div>
+
+              <NotificationBell />
 
               {/* Chat Icon */}
               <button

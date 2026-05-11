@@ -46,7 +46,7 @@ const Navbar = ({ isChatOpen, onChatToggle }: NavbarProps) => {
     <nav className={`sticky top-0 z-50 w-full transition-all duration-500 ${scrolled ? "glass shadow-lg py-2" : "bg-transparent py-4"
       }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 xl:gap-8">
           {/* LEFT: Logo */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative w-10 h-10 overflow-hidden rounded-xl bg-gradient-to-tr from-primary to-secondary p-[2px] shadow-lg shadow-primary/20 group-hover:shadow-primary/40 group-hover:scale-105 transition-all duration-300">
@@ -67,7 +67,7 @@ const Navbar = ({ isChatOpen, onChatToggle }: NavbarProps) => {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`relative px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${isActive
+                  className={`relative px-3 xl:px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${isActive
                     ? "text-white bg-gradient-to-r from-primary to-secondary shadow-lg shadow-primary/25 scale-105"
                     : "text-slate-600 hover:text-primary hover:bg-white/80"
                     }`}

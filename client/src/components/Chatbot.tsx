@@ -40,6 +40,9 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
     const [sessionId, setSessionId] = useState("");
     const [suggestions, setSuggestions] = useState<ChatSuggestion[]>([]);
     const [showWelcome, setShowWelcome] = useState(true);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0 });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { user } = useAuthStore();
@@ -55,8 +58,12 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
     }, []);
 
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, isLoading]);
+        if (isOpen) {
+            setTimeout(() => {
+                scrollToBottom();
+            }, 100);
+        }
+    }, [messages, isLoading, isOpen]);
 
     const initializeSession = async () => {
         let sid = localStorage.getItem("chatbot_session_id");
@@ -280,18 +287,61 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
         }
     };
 
+    const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        if ((e.target as HTMLElement).closest('button')) return;
+        setIsDragging(true);
+        dragRef.current.startX = e.clientX;
+        dragRef.current.startY = e.clientY;
+        dragRef.current.currentX = position.x;
+        dragRef.current.currentY = position.y;
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDragging) return;
+            const deltaX = e.clientX - dragRef.current.startX;
+            const deltaY = e.clientY - dragRef.current.startY;
+            setPosition({
+                x: dragRef.current.currentX + deltaX,
+                y: dragRef.current.currentY + deltaY,
+            });
+        };
+
+        const handleMouseUp = () => {
+            setIsDragging(false);
+        };
+
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging]);
+
     return (
         <>
             {isOpen && (
-                <div className="fixed bottom-6 right-6 z-50 w-[420px] h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200">
-                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 flex items-center justify-between">
+                <div
+                    className={`fixed bottom-6 right-6 z-50 w-[420px] h-[600px] bg-white rounded-2xl flex flex-col overflow-hidden border border-gray-200 transition-shadow duration-200 ${isDragging ? 'shadow-2xl shadow-blue-500/20' : 'shadow-2xl'}`}
+                    style={{
+                        transform: `translate(${position.x}px, ${position.y}px)`,
+                    }}
+                >
+                    <div
+                        className={`bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 flex items-center justify-between select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                        onMouseDown={handleMouseDown}
+                    >
                         <div className="flex items-center gap-3">
                             <div className="relative">
                                 <Sparkles className="w-8 h-8" />
                                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-lg">MyWeb Assistant</h3>
+                                <h3 className="font-bold text-lg">Meme Assistant</h3>
                                 <p className="text-xs opacity-90">Hỗ trợ mua sắm 24/7</p>
                             </div>
                         </div>
@@ -579,12 +629,7 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                             </button>
                         </div>
 
-                        {process.env.NODE_ENV === "development" && sessionId && (
-                            <div className="mt-2 text-xs text-gray-400 font-mono">
-                                Session: {sessionId.substring(0, 8)}...
-                                {user && ` | User: ${user.fullName}`}
-                            </div>
-                        )}
+
                     </div>
                 </div>
             )}

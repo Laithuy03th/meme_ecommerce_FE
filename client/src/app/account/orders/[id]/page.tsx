@@ -231,24 +231,32 @@ const OrderDetailPage = () => {
 
             {/* STATUS BANNERS - SHOPEE STYLE */}
 
-            {order.status === ORDER_STATUS.DELIVERED && (
-                <div className={`${order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? 'bg-gray-50 border-gray-200' : 'bg-emerald-50 border-emerald-200'} border rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2`}>
-                    <CheckCircle2 className={`w-5 h-5 ${order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? 'text-gray-400' : 'text-emerald-600'} mt-0.5 flex-shrink-0`} />
+            {order.status === ORDER_STATUS.DELIVERED && (() => {
+                const RETURN_WINDOW_DAYS = 7;
+                const deliveredMs = order.deliveredAt ? new Date(order.deliveredAt).getTime() : null;
+                const isExpired = deliveredMs !== null && (new Date().getTime() - deliveredMs > RETURN_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+                const deadlineDate = deliveredMs ? new Date(deliveredMs + RETURN_WINDOW_DAYS * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN') : null;
+                return (
+                <div className={`${isExpired ? 'bg-gray-50 border-gray-200' : 'bg-emerald-50 border-emerald-200'} border rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2`}>
+                    <CheckCircle2 className={`w-5 h-5 ${isExpired ? 'text-gray-400' : 'text-emerald-600'} mt-0.5 flex-shrink-0`} />
                     <div>
-                        <h4 className={`font-bold ${order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? 'text-gray-800' : 'text-emerald-800'}`}>Giao hàng thành công</h4>
-                        <p className={`text-sm ${order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? 'text-gray-500' : 'text-emerald-600'} mt-1`}>
-                            {order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? (
-                                <>Đã quá thời gian 10 ngày để yêu cầu Trả hàng / Hoàn tiền. Nếu sản phẩm có lỗi phát sinh sau này, vui lòng liên hệ bộ phận Bảo hành.</>
-                            ) : (
+                        <h4 className={`font-bold ${isExpired ? 'text-gray-800' : 'text-emerald-800'}`}>Giao hàng thành công</h4>
+                        <p className={`text-sm ${isExpired ? 'text-gray-500' : 'text-emerald-600'} mt-1`}>
+                            {isExpired ? (
+                                <>Đã quá thời gian {RETURN_WINDOW_DAYS} ngày để yêu cầu Trả hàng / Hoàn tiền. Nếu sản phẩm có lỗi phát sinh sau này, vui lòng liên hệ bộ phận Bảo hành.</>
+                            ) : deadlineDate ? (
                                 <>
-                                    Vui lòng kiểm tra hàng. Nếu có vấn đề, hãy yêu cầu <b>Trả hàng/Hoàn tiền</b> trước ngày {order.deliveredAt ? new Date(new Date(order.deliveredAt).setDate(new Date(order.deliveredAt).getDate() + 10)).toLocaleDateString() : "hạn định"}.
+                                    Vui lòng kiểm tra hàng. Nếu có vấn đề, hãy yêu cầu <b>Trả hàng/Hoàn tiền</b> trước ngày <b>{deadlineDate}</b>.
                                     <br />Nếu bạn hài lòng, hãy bấm <b>Đánh giá</b> để nhận xu tích lũy nhé!
                                 </>
+                            ) : (
+                                <>Đơn hàng đã được giao. Bạn có thể yêu cầu trả hàng nếu cần.</>
                             )}
                         </p>
                     </div>
                 </div>
-            )}
+                );
+            })()}
 
             {order.status === ORDER_STATUS.RETURN_REQUESTED && (
                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3">
@@ -384,15 +392,20 @@ const OrderDetailPage = () => {
                         )}
 
                         {/* 3. STATE: DELIVERED (The Buffer Zone) */}
-                        {order.status === ORDER_STATUS.DELIVERED && !isReturned && (
+                        {order.status === ORDER_STATUS.DELIVERED && !isReturned && (() => {
+                            const RETURN_WINDOW_DAYS = 7;
+                            const deliveredMs = order.deliveredAt ? new Date(order.deliveredAt).getTime() : null;
+                            // Neu khong co deliveredAt: an nut tra hang (fail-safe)
+                            const isExpired = deliveredMs === null || (new Date().getTime() - deliveredMs > RETURN_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+                            const hasReviewedAny = order.items?.some(i => i.hasReviewed || localReviewedIds.has(i.id));
+                            return (
                             <>
-                                {/* Return Action: Only if NOT item reviewed yet AND not expired */}
-                                {!order.items?.some(i => i.hasReviewed || localReviewedIds.has(i.id)) ? (
+                                {!hasReviewedAny ? (
                                     <div className="flex flex-col gap-2 w-full md:w-auto">
-                                        {order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) ? (
+                                        {isExpired ? (
                                             <div className="bg-gray-100 border border-gray-200 rounded-lg px-4 py-2.5 flex items-center gap-2 text-gray-500 opacity-70">
                                                 <AlertTriangle className="w-4 h-4" />
-                                                <span className="font-bold text-sm text-gray-400">Đã quá thời gian trả hàng</span>
+                                                <span className="font-bold text-sm text-gray-400">Đã quá thời gian {RETURN_WINDOW_DAYS} ngày trả hàng</span>
                                             </div>
                                         ) : (
                                             <button
@@ -403,8 +416,8 @@ const OrderDetailPage = () => {
                                             </button>
                                         )}
                                         <p className="text-xs text-gray-400 italic">
-                                            {order.deliveredAt && (new Date().getTime() - new Date(order.deliveredAt).getTime() > 10 * 24 * 60 * 60 * 1000) 
-                                              ? "*Bạn đã quá hạn 10 ngày để yêu cầu hoàn tiền cho đơn hàng này."
+                                            {isExpired
+                                              ? `*Bạn đã quá hạn ${RETURN_WINDOW_DAYS} ngày để yêu cầu hoàn tiền cho đơn hàng này.`
                                               : "*Lưu ý: Bạn sẽ mất quyền trả hàng nếu đã đánh giá sản phẩm."}
                                         </p>
                                     </div>
@@ -415,7 +428,8 @@ const OrderDetailPage = () => {
                                     </p>
                                 )}
                             </>
-                        )}
+                            );
+                        })()}
 
                         {/* 4. STATE: Final States for Re-ordering */}
                         {[ORDER_STATUS.CANCELED, ORDER_STATUS.RETURNED, ORDER_STATUS.REFUNDED, ORDER_STATUS.DELIVERED].includes(order.status) && (

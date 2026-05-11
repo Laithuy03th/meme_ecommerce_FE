@@ -115,7 +115,7 @@ const SearchBar = ({ onToggle }: SearchBarProps) => {
     <div ref={containerRef} className="relative z-50">
       <form
         onSubmit={handleSearch}
-        className={`flex items-center gap-3 bg-white/80 backdrop-blur-md border border-white/50 rounded-full px-5 py-2.5 transition-all duration-500 ease-out shadow-sm hover:shadow-md ${isOpen ? "w-[300px] md:w-[450px] ring-2 ring-primary/30 border-primary bg-white shadow-lg" : "w-[220px] md:w-[280px] hover:bg-white"
+        className={`flex items-center gap-3 bg-white/80 backdrop-blur-md border border-white/50 rounded-full px-5 py-2.5 transition-all duration-500 ease-out shadow-sm hover:shadow-md ${isOpen ? "w-[300px] md:w-[350px] xl:w-[450px] ring-2 ring-primary/30 border-primary bg-white shadow-lg" : "w-[220px] md:w-[200px] xl:w-[280px] hover:bg-white"
           }`}
       >
         <Search className={`w-5 h-5 transition-colors duration-300 ${isOpen ? "text-primary" : "text-slate-400"}`} />

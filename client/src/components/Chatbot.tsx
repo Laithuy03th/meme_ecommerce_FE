@@ -45,6 +45,7 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
     const dragRef = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0 });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const { user } = useAuthStore();
     const router = useRouter();
 
@@ -217,6 +218,9 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
 
         setMessages((prev) => [...prev, userMessage]);
         setInput("");
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+        }
         setIsLoading(true);
 
         try {
@@ -605,31 +609,39 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    <div className="p-4 bg-white border-t border-gray-200">
-                        <div className="flex items-end gap-2">
-                            <div className="flex-1 relative">
-                                <textarea
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyDown={handleKeyPress}
-                                    placeholder="Nhập tin nhắn..."
-                                    disabled={!sessionId || isLoading}
-                                    rows={1}
-                                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
-                                    style={{ minHeight: "48px", maxHeight: "120px" }}
-                                />
-                            </div>
+                    <div className="px-4 pb-4 pt-2 bg-white">
+                        <div className="relative flex items-end w-full border border-gray-200 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] bg-gray-50/50 hover:bg-white focus-within:bg-white focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-400 transition-all duration-300 group">
+                            <textarea
+                                ref={textareaRef}
+                                value={input}
+                                onChange={(e) => {
+                                    setInput(e.target.value);
+                                    e.target.style.height = 'auto';
+                                    e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+                                }}
+                                onKeyDown={handleKeyPress}
+                                placeholder="Hỏi Meme Assistant bất cứ điều gì..."
+                                disabled={!sessionId || isLoading}
+                                rows={1}
+                                className="w-full max-h-[150px] px-4 py-3.5 pr-[52px] bg-transparent focus:outline-none resize-none disabled:cursor-not-allowed text-[15px] leading-relaxed text-gray-700 placeholder-gray-400"
+                                style={{ minHeight: "52px" }}
+                            />
 
                             <button
                                 onClick={() => handleSendMessage()}
                                 disabled={!input.trim() || !sessionId || isLoading}
-                                className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                                className={`absolute right-2 bottom-2 w-9 h-9 rounded-xl transition-all duration-300 flex items-center justify-center ${input.trim() && !isLoading
+                                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+                                    : "bg-gray-200/80 text-gray-400"
+                                    }`}
                             >
-                                <Send className="w-5 h-5" />
+                                <Send className="w-[18px] h-[18px] ml-[2px] mb-[1px]" />
                             </button>
                         </div>
-
-
+                        <div className="text-center text-[11px] text-gray-400 mt-3 flex items-center justify-center gap-1.5 opacity-80">
+                            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                            <span>Meme Assistant có thể đưa ra thông tin hỗ trợ bạn!.</span>
+                        </div>
                     </div>
                 </div>
             )}

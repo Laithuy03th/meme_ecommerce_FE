@@ -6,6 +6,7 @@ import { Star, Truck, ShieldCheck, RotateCcw, Sparkles, Award, BadgeCheck } from
 import SafeImage from "@/components/SafeImage";
 import { useState, useEffect } from "react";
 import { getSafeImageUrl, getSafeImageArray } from "@/lib/imageUtils";
+import ProductSpecsTab from "./ProductSpecsTab";
 
 const ProductView = ({
     product,
@@ -38,9 +39,10 @@ const ProductView = ({
 
     const averageRating = product.rating || 4.5;
     return (
-        <div className="flex flex-col lg:flex-row gap-12 mb-16">
-            {/* IMAGE GALLERY */}
-            <div className="w-full lg:w-1/2 space-y-6">
+        <div className="w-full flex flex-col gap-12">
+            <div className="flex flex-col lg:flex-row gap-12">
+                {/* IMAGE GALLERY */}
+                <div className="w-full lg:w-1/2 space-y-6">
                 <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 shadow-xl group">
                     <SafeImage
                         src={currentImage}
@@ -169,6 +171,15 @@ const ProductView = ({
                     </div>
                 </div>
             </div>
+            </div>
+
+            {/* PRODUCT SPECS */}
+            {product.specifications && Object.keys(product.specifications).length > 0 && (
+                <ProductSpecsTab 
+                    specifications={product.specifications} 
+                    categorySlug={product.categorySlug} 
+                />
+            )}
         </div>
     );
 };

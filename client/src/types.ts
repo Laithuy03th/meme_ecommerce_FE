@@ -76,6 +76,9 @@ export type ProductType = {
   stockQuantity?: number;
   viewCount?: number;
   videoUrl?: string | null;
+
+  // Added for specs feature
+  specifications?: Record<string, string> | null;
 };
 
 export type SearchKeywordSuggestion = {

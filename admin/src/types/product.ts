@@ -24,6 +24,7 @@ export interface Product extends BaseEntity {
     thumbnailUrl: string;
     imageUrls: string[];
     status: ProductStatus;
+    specifications?: Record<string, string> | null;
 }
 
 export interface CreateProductRequest {
@@ -42,6 +43,7 @@ export interface CreateProductRequest {
     thumbnailUrl: string;
     imageUrls: string[];
     status?: ProductStatus;
+    specifications?: Record<string, string> | null;
 }
 
 export interface ProductVariant extends BaseEntity {

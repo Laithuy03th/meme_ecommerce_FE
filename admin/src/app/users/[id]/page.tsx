@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState, use } from "react";
 import CardList from "@/components/CardList";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,25 +17,61 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Progress } from "@/components/ui/progress";
-import { BadgeCheck, Candy, Citrus, Shield } from "lucide-react";
+import { BadgeCheck, Candy, Citrus, Shield, Loader2 } from "lucide-react";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import EditUser from "@/components/EditUser";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AppLineChart from "@/components/AppLineChart";
 import { userApi } from "@/services/userApi";
+import type { UserType } from "@/services/authApi";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-const SingleUserPage = async ({ params }: PageProps) => {
-  // In Next.js 15, params might be a promise, but for now let's assume standard behavior or await if needed.
-  // If it's a promise, we should await it. But to be safe with TS, let's treat it as object first.
-  // If build fails, we fix.
-  // Actually, let's just use the id directly.
-  const id = parseInt(params.id);
-  const user = await userApi.getUser(id);
+const SingleUserPage = ({ params }: PageProps) => {
+  const unwrappedParams = use(params);
+  const [user, setUser] = useState<UserType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const id = parseInt(unwrappedParams.id);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        setLoading(true);
+        const data = await userApi.getUser(id);
+        setUser(data);
+      } catch (err: any) {
+        console.error("Failed to fetch user:", err);
+        setError(err.message || "Failed to load user data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <div className="p-4 text-destructive bg-destructive/10 rounded-lg">
+        <h2 className="text-lg font-bold">Error</h2>
+        <p>{error || "User not found"}</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="">
@@ -93,19 +132,26 @@ const SingleUserPage = async ({ params }: PageProps) => {
             </div>
           </div>
           {/* USER CARD CONTAINER */}
-          <div className="bg-primary-foreground p-4 rounded-lg space-y-2">
-            <div className="flex items-center gap-2">
-              <Avatar className="size-12">
+          <div className="bg-primary-foreground p-4 rounded-lg space-y-2 border shadow-sm">
+            <div className="flex items-center gap-4">
+              <Avatar className="size-16 border-2 border-primary/20">
                 <AvatarImage src={`/users/${(user.id % 10) + 1}.png`} />
-                <AvatarFallback>{user.fullName?.charAt(0) || user.email.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="text-xl font-bold bg-primary/10">
+                  {user.fullName?.charAt(0) || user.email.charAt(0)}
+                </AvatarFallback>
               </Avatar>
-              <h1 className="text-xl font-semibold">{user.fullName || "No Name"}</h1>
+              <div>
+                <h1 className="text-2xl font-bold">{user.fullName || "No Name"}</h1>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {user.email}
-            </p>
-            <div className="flex gap-2">
-              <Badge variant={user.status === "ACTIVE" ? "default" : "destructive"}>{user.status}</Badge>
+            <div className="flex gap-2 pt-2">
+              <Badge variant={user.status === "ACTIVE" ? "default" : "destructive"}>
+                {user.status === "ACTIVE" ? "Đang hoạt động" : "Bị khóa"}
+              </Badge>
+              {user.roles.map(role => (
+                <Badge key={role} variant="outline" className="capitalize">{role.toLowerCase()}</Badge>
+              ))}
             </div>
           </div>
           {/* INFORMATION CONTAINER */}
@@ -114,7 +160,7 @@ const SingleUserPage = async ({ params }: PageProps) => {
               <h1 className="text-xl font-semibold">User Information</h1>
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button>Edit User</Button>
+                  <Button variant="outline" size="sm">Edit User</Button>
                 </SheetTrigger>
                 <EditUser user={user} />
               </Sheet>
@@ -137,14 +183,13 @@ const SingleUserPage = async ({ params }: PageProps) => {
                 <span>{user.roles.join(", ")}</span>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-4">
+            <p className="text-sm text-muted-foreground mt-4 italic">
               Joined on {new Date(user.createdAt).toLocaleDateString()}
             </p>
           </div>
         </div>
         {/* RIGHT */}
         <div className="w-full xl:w-2/3 space-y-6">
-
           {/* CHART CONTAINER */}
           <div className="bg-primary-foreground p-4 rounded-lg">
             <h1 className="text-xl font-semibold">User Activity</h1>

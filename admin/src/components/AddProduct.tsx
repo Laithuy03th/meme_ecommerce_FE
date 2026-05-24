@@ -6,7 +6,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -34,7 +34,7 @@ import { handleApiError } from "@/lib/error-handler";
 import { useState, useEffect } from "react";
 import type { Category } from "@/types/category";
 import { categoryApi } from "@/services/categoryApi";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import ImageUploader from "./ImageUploader";
 import MultiImageUploader from "./MultiImageUploader";
 
@@ -54,6 +54,10 @@ const formSchema = z.object({
     isFeatured: z.boolean().optional(),
     videoUrl: z.string().optional(),
     status: z.enum(["ACTIVE", "INACTIVE", "DRAFT"]),
+    specifications: z.array(z.object({
+        key: z.string().min(1, { message: "Key required" }),
+        value: z.string().min(1, { message: "Value required" })
+    })).optional(),
 });
 
 interface AddProductProps {
@@ -82,7 +86,13 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
             isFeatured: false,
             videoUrl: "",
             status: "DRAFT",
+            specifications: [],
         },
+    });
+
+    const { fields: specFields, append: appendSpec, remove: removeSpec } = useFieldArray({
+        control: form.control,
+        name: "specifications"
     });
 
     useEffect(() => {
@@ -130,6 +140,10 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                 isFeatured: values.isFeatured,
                 videoUrl: values.videoUrl,
                 status: values.status,
+                specifications: values.specifications?.reduce((acc, curr) => {
+                    if (curr.key && curr.value) acc[curr.key] = curr.value;
+                    return acc;
+                }, {} as Record<string, string>) || null,
             };
 
             await productApi.create(productData);
@@ -168,7 +182,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
@@ -182,7 +196,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                 />
 
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="slug"
                                     render={({ field }) => (
                                         <FormItem>
@@ -199,7 +213,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                 />
 
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="shortDesc"
                                     render={({ field }) => (
                                         <FormItem>
@@ -214,7 +228,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                 />
 
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="longDesc"
                                     render={({ field }) => (
                                         <FormItem>
@@ -228,7 +242,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                 />
 
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="categoryId"
                                     render={({ field }) => (
                                         <FormItem>
@@ -257,7 +271,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
-                                        control={form.control}
+                                        control={form.control as any}
                                         name="basePrice"
                                         render={({ field }) => (
                                             <FormItem>
@@ -275,7 +289,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                     />
 
                                     <FormField
-                                        control={form.control}
+                                        control={form.control as any}
                                         name="stockQuantity"
                                         render={({ field }) => (
                                             <FormItem>
@@ -295,7 +309,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
-                                        control={form.control}
+                                        control={form.control as any}
                                         name="brand"
                                         render={({ field }) => (
                                             <FormItem>
@@ -308,7 +322,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                         )}
                                     />
                                     <FormField
-                                        control={form.control}
+                                        control={form.control as any}
                                         name="sku"
                                         render={({ field }) => (
                                             <FormItem>
@@ -323,7 +337,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
-                                        control={form.control}
+                                        control={form.control as any}
                                         name="weight"
                                         render={({ field }) => (
                                             <FormItem>
@@ -340,7 +354,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                         )}
                                     />
                                     <FormField
-                                        control={form.control}
+                                        control={form.control as any}
                                         name="isFeatured"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-8">
@@ -363,7 +377,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                     />
                                 </div>
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="videoUrl"
                                     render={({ field }) => (
                                         <FormItem>
@@ -377,7 +391,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                 />
 
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="thumbnailUrl"
                                     render={({ field }) => (
                                         <FormItem>
@@ -396,7 +410,7 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                 />
 
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="imageUrls"
                                     render={({ field }) => (
                                         <FormItem>
@@ -415,8 +429,67 @@ const AddProduct = ({ onSuccess }: AddProductProps) => {
                                     )}
                                 />
 
+                                {/* SPECIFICATIONS DYNAMIC FIELDS */}
+                                <div className="space-y-4 pt-4 border-t">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h4 className="text-sm font-medium leading-none">Specifications</h4>
+                                            <p className="text-sm text-muted-foreground mt-1">Add technical details for the product</p>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => appendSpec({ key: "", value: "" })}
+                                        >
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Add Spec
+                                        </Button>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        {specFields.map((field, index) => (
+                                            <div key={field.id} className="flex gap-3 items-start">
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name={`specifications.${index}.key` as any}
+                                                    render={({ field: inputField }) => (
+                                                        <FormItem className="flex-1">
+                                                            <FormControl>
+                                                                <Input placeholder="e.g. Screen Size" {...inputField} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name={`specifications.${index}.value` as any}
+                                                    render={({ field: inputField }) => (
+                                                        <FormItem className="flex-1">
+                                                            <FormControl>
+                                                                <Input placeholder="e.g. 6.1 inch OLED" {...inputField} />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 mt-1"
+                                                    onClick={() => removeSpec(index)}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="status"
                                     render={({ field }) => (
                                         <FormItem>

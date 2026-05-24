@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
-import { Loader2, Plus, Pencil, Trash2, Package, Eye } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Package, Eye, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Pagination } from "@/components/Pagination";
@@ -210,11 +210,16 @@ export default function ProductsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Link href={`/products/${product.id}`}>
+                      <Link href={`/products/${product.id}`} title="View Details">
                         <Button variant="ghost" size="sm">
                           <Eye className="w-4 h-4" />
                         </Button>
                       </Link>
+                      <a href={`http://localhost:3000/products/${product.id}`} target="_blank" rel="noopener noreferrer" title="View on Storefront">
+                        <Button variant="ghost" size="sm">
+                          <ExternalLink className="w-4 h-4 text-blue-600" />
+                        </Button>
+                      </a>
                       <Sheet>
                         <SheetTrigger asChild>
                           <Button

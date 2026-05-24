@@ -74,9 +74,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         switch (order.status) {
             case 'PENDING':
+                const canConfirm = order.paymentMethod === 'COD' || order.paymentStatus === 'PAID';
                 buttons.push(
-                    <Button key="confirm" onClick={() => handleStatusChange('CONFIRMED')} disabled={updating} className="bg-blue-600 hover:bg-blue-700">
-                        Xác nhận
+                    <Button key="confirm" onClick={() => handleStatusChange('CONFIRMED')} disabled={updating || !canConfirm} className="bg-blue-600 hover:bg-blue-700" title={!canConfirm ? "Không thể xác nhận đơn thanh toán online chưa thanh toán" : ""}>
+                        {canConfirm ? 'Xác nhận' : 'Chờ thanh toán'}
                     </Button>,
                     <Button key="cancel" onClick={() => handleStatusChange('CANCELED')} disabled={updating} variant="destructive">
                         Hủy đơn

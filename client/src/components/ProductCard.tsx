@@ -164,7 +164,7 @@ const ProductCard = ({ product }: { product: ProductType }) => {
           </div>
 
           <p className="text-sm text-slate-500 line-clamp-2 mb-4 h-10 leading-relaxed">
-            {product.shortDesc || product.description || "Experience premium quality with our latest collection."}
+            {product.shortDesc || product.description || product.longDesc}
           </p>
 
           <div className="mt-auto flex items-end justify-between">

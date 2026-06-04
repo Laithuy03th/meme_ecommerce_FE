@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { X, Send, Loader2, Trash2, Sparkles, Plus, History } from "lucide-react";
+import { X, Send, Loader2, Trash2, BotMessageSquare, Plus, History } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import {
     sendChatMessage,
@@ -341,7 +341,7 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                     >
                         <div className="flex items-center gap-3">
                             <div className="relative">
-                                <Sparkles className="w-8 h-8" />
+                                <BotMessageSquare className="w-8 h-8" />
                                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
                             </div>
                             <div>
@@ -378,7 +378,7 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                         {showWelcome && messages.length === 0 && (
                             <div className="text-center py-8 space-y-4">
                                 <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                    <Sparkles className="w-10 h-10 text-white" />
+                                    <BotMessageSquare className="w-10 h-10 text-white" />
                                 </div>
 
                                 <div>
@@ -419,7 +419,7 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                             >
                                 {msg.type === "bot" && (
                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mr-2 flex-shrink-0 shadow-sm mt-auto">
-                                        <Sparkles className="w-4 h-4 text-white" />
+                                        <BotMessageSquare className="w-4 h-4 text-white" />
                                     </div>
                                 )}
 
@@ -594,7 +594,7 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                         {isLoading && (
                             <div className="flex justify-start mb-4">
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mr-2 flex-shrink-0 shadow-sm mt-auto">
-                                    <Sparkles className="w-4 h-4 text-white" />
+                                    <BotMessageSquare className="w-4 h-4 text-white" />
                                 </div>
                                 <div className="bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-bl-sm shadow-sm px-4 py-3 flex items-center h-[42px]">
                                     <div className="flex space-x-1.5 items-center">
@@ -639,7 +639,7 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                             </button>
                         </div>
                         <div className="text-center text-[11px] text-gray-400 mt-3 flex items-center justify-center gap-1.5 opacity-80">
-                            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                            <BotMessageSquare className="w-3.5 h-3.5 text-purple-400" />
                             <span>Meme Assistant có thể đưa ra thông tin hỗ trợ bạn!.</span>
                         </div>
                     </div>

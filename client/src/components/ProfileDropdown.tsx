@@ -1,7 +1,7 @@
 "use client";
 
 import {
-    User,
+    Smile,
     Package,
     Heart,
     Settings,
@@ -64,23 +64,14 @@ const ProfileDropdown = () => {
 
     if (!isAuthenticated || !user) {
         return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
                 <Link
                     href="/login"
-                    className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-slate-700 bg-white/80 backdrop-blur-md border border-white/60 rounded-full shadow-sm hover:shadow-md hover:bg-white hover:text-primary transition-all duration-300 group"
+                    className="relative flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold text-white bg-gradient-to-r from-primary to-secondary rounded-full overflow-hidden shadow-md shadow-primary/20 hover:shadow-primary/30 transition-all duration-300 group hover:-translate-y-0.5"
                 >
-                    <User className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
-                    <span className="hidden sm:inline">Đăng nhập</span>
-                </Link>
-                <Link
-                    href="/login?mode=register"
-                    className="relative flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-primary to-secondary rounded-full overflow-hidden shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 group hover:-translate-y-0.5"
-                >
-                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
-                    <span className="relative z-10 hidden sm:inline text-white">Đăng ký</span>
-                    <span className="relative z-10 sm:hidden">
-                        <User className="w-4 h-4 text-white" />
-                    </span>
+                    <div className="absolute inset-0 bg-white/15 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                    <Smile className="relative z-10 w-4 h-4 text-white group-hover:animate-bounce" />
+                    <span className="relative z-10 whitespace-nowrap">Đăng nhập</span>
                 </Link>
             </div>
         );

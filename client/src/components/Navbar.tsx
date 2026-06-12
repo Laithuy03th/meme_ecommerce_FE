@@ -43,7 +43,7 @@ const Navbar = ({ isChatOpen, onChatToggle }: NavbarProps) => {
   ];
 
   return (
-    <nav className={`sticky top-0 z-50 w-full transition-all duration-500 ${scrolled ? "glass shadow-lg py-2" : "bg-transparent py-4"
+    <nav className={`sticky top-0 z-50 w-full transition-all duration-500 ${scrolled ? "bg-purple-100/90 backdrop-blur-md shadow-lg shadow-purple-200/50 border-b-2 border-purple-300 py-2" : "bg-purple-100/40 backdrop-blur-sm py-4"
       }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-3 xl:gap-8">
@@ -79,46 +79,50 @@ const Navbar = ({ isChatOpen, onChatToggle }: NavbarProps) => {
           </div>
 
           {/* RIGHT: Icons & Actions */}
-          <div className="flex items-center gap-3 md:gap-5">
+          <div className="flex items-center gap-1 md:gap-2">
             <div className="hidden sm:block transform hover:scale-105 transition-transform duration-300">
               <SearchBar onToggle={setIsSearchOpen} />
             </div>
 
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center">
+              {/* Wishlist */}
               <button
                 onClick={() => router.push(isAuthenticated ? "/wishlist" : "/login?redirect=/wishlist")}
-                className="relative p-2.5 rounded-full hover:bg-white/80 hover:shadow-lg hover:shadow-pink-500/20 transition-all duration-300 group border border-transparent hover:border-pink-100"
+                className="relative p-2.5 rounded-full hover:bg-white/80 hover:shadow-md hover:shadow-pink-500/20 transition-all duration-300 group border border-transparent hover:border-pink-100"
               >
                 <Heart className="w-5 h-5 text-slate-600 group-hover:text-pink-500 group-hover:fill-pink-50 transition-colors" />
                 {mounted && wishlist.length > 0 && (
-                  <span className="absolute top-0 right-0 w-4 h-4 bg-pink-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm animate-bounce">
+                  <span className="absolute top-0.5 right-0.5 w-4 h-4 bg-pink-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
                     {wishlist.length}
                   </span>
                 )}
               </button>
 
+              {/* Cart */}
               <div className="hover:scale-105 transition-transform duration-300">
                 <ShoppingCartIcon />
               </div>
 
+              {/* Notifications */}
               <NotificationBell />
 
               {/* Chat Icon */}
               <button
                 onClick={() => onChatToggle(!isChatOpen)}
-                className="relative p-2.5 rounded-full hover:bg-white/80 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 group border border-transparent hover:border-purple-100"
+                className="relative p-2.5 rounded-full hover:bg-white/80 hover:shadow-md hover:shadow-purple-500/20 transition-all duration-300 group border border-transparent hover:border-purple-100"
                 title="Meme Assistant"
               >
-                <BotMessageSquare className="w-8 h-8 text-slate-600 group-hover:text-purple-500 transition-colors" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full shadow-sm animate-pulse"></span>
+                <BotMessageSquare className="w-5 h-5 text-slate-600 group-hover:text-purple-500 transition-colors" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full shadow-sm animate-pulse"></span>
               </button>
 
-              <div className="pl-2 border-l border-slate-200">
+              {/* Profile / Auth Buttons */}
+              <div className="pl-2 ml-1 border-l border-slate-200/80">
                 <ProfileDropdown />
               </div>
 
               <button className="md:hidden p-2 rounded-full hover:bg-gray-100 active:scale-95 transition-transform">
-                <Menu className="w-6 h-6 text-slate-700" />
+                <Menu className="w-5 h-5 text-slate-700" />
               </button>
             </div>
           </div>

@@ -12,11 +12,13 @@ interface PaymentFormProps {
   addressId: number;
   voucherCode?: string;
   selectedItemIds?: number[];
+  shippingMethodId: number;
+  onShippingMethodChange: (id: number) => void;
 }
 
 type PaymentMethod = "COD" | "BANKING" | "VNPAY";
 
-const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormProps) => {
+const PaymentForm = ({ addressId, voucherCode, selectedItemIds, shippingMethodId, onShippingMethodChange }: PaymentFormProps) => {
   const { handleSubmit } = useForm();
   const router = useRouter();
   const { clearCart, removeFromCart, fetchCart, cart } = useCartStore();
@@ -86,6 +88,81 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
   return (
     <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
       <div className="flex items-center gap-3 mb-4 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="w-12 h-12 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/20">
+          <Truck className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900">Shipping Method</h3>
+          <p className="text-gray-500 text-sm mt-0.5">Choose your delivery speed</p>
+        </div>
+      </div>
+
+      <div className="grid gap-4">
+        {/* Standard Shipping */}
+        <label
+          className={`flex items-center gap-5 p-6 rounded-2xl border-2 cursor-pointer transition-all shadow-sm hover:shadow-lg bg-white ${shippingMethodId === 1
+            ? "border-primary shadow-primary/10"
+            : "border-gray-100 hover:border-primary/30"
+            }`}
+        >
+          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${shippingMethodId === 1 ? "border-primary bg-gradient-to-r from-primary to-secondary" : "border-gray-300"
+            }`}>
+            {shippingMethodId === 1 && (
+              <CheckCircle className="w-4 h-4 text-white" />
+            )}
+          </div>
+          <input
+            type="radio"
+            name="shippingMethodId"
+            value={1}
+            checked={shippingMethodId === 1}
+            onChange={() => onShippingMethodChange(1)}
+            className="hidden"
+          />
+          <div className="flex-1">
+            <span className="text-lg font-bold text-gray-900 block">Standard Shipping</span>
+            <span className="text-sm text-gray-500 mt-1">Receive in 3-5 days</span>
+          </div>
+          <div className="text-right">
+            <span className="text-lg font-bold text-gray-900">30.000đ</span>
+          </div>
+        </label>
+
+        {/* Express Shipping */}
+        <label
+          className={`flex items-center gap-5 p-6 rounded-2xl border-2 cursor-pointer transition-all shadow-sm hover:shadow-lg bg-white ${shippingMethodId === 2
+            ? "border-primary shadow-primary/10"
+            : "border-gray-100 hover:border-primary/30"
+            }`}
+        >
+          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${shippingMethodId === 2 ? "border-primary bg-gradient-to-r from-primary to-secondary" : "border-gray-300"
+            }`}>
+            {shippingMethodId === 2 && (
+              <CheckCircle className="w-4 h-4 text-white" />
+            )}
+          </div>
+          <input
+            type="radio"
+            name="shippingMethodId"
+            value={2}
+            checked={shippingMethodId === 2}
+            onChange={() => onShippingMethodChange(2)}
+            className="hidden"
+          />
+          <div className="flex-1">
+            <span className="text-lg font-bold text-gray-900 block flex items-center gap-2">
+              Express Shipping
+              <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold">FAST</span>
+            </span>
+            <span className="text-sm text-gray-500 mt-1">Receive in 1-2 days</span>
+          </div>
+          <div className="text-right">
+            <span className="text-lg font-bold text-gray-900">50.000đ</span>
+          </div>
+        </label>
+      </div>
+
+      <div className="flex items-center gap-3 mb-4 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mt-4">
         <div className="w-12 h-12 bg-gradient-to-r from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
           <Wallet className="w-6 h-6 text-white" />
         </div>
@@ -148,7 +225,6 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds }: PaymentFormPro
             className="hidden"
           />
           <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden p-1">
-            {/* VNPAY Logo or Icon */}
             <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs rounded-xl">VNPAY</div>
           </div>
           <div className="flex-1">

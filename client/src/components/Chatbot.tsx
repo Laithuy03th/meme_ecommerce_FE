@@ -47,6 +47,10 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const { user } = useAuthStore();
+
+    // Tạo localStorage key riêng theo userId để tránh nhầm lẫn session giữa các tài khoản
+    const getSessionStorageKey = () =>
+        user?.id ? `chatbot_session_id_${user.id}` : "chatbot_session_id_guest";
     const router = useRouter();
 
     useEffect(() => {
@@ -56,7 +60,7 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
         const wasOpen = sessionStorage.getItem("chatbot_is_open") === "true";
         if (wasOpen) onToggle(true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [user?.id]); // Re-init khi user thay đổi (đăng nhập / đăng xuất / đổi tài khoản)
 
     useEffect(() => {
         if (isOpen) {
@@ -67,14 +71,29 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
     }, [messages, isLoading, isOpen]);
 
     const initializeSession = async () => {
-        let sid = localStorage.getItem("chatbot_session_id");
+        // Reset state trước khi init (quan trọng khi switch account)
+        setMessages([]);
+        setShowWelcome(true);
 
+        const storageKey = getSessionStorageKey();
+
+        if (!user) {
+            // Khách vãng lai: luôn tạo session mới, KHÔNG restore lịch sử
+            const sid = generateSessionId();
+            localStorage.setItem(storageKey, sid);
+            console.log("🆕 Guest new session:", sid);
+            setSessionId(sid);
+            return;
+        }
+
+        // Người dùng đã đăng nhập: khôi phục session riêng của họ
+        let sid = localStorage.getItem(storageKey);
         if (!sid) {
             sid = generateSessionId();
-            localStorage.setItem("chatbot_session_id", sid);
-            console.log("🆕 New chat session:", sid);
+            localStorage.setItem(storageKey, sid);
+            console.log("🆕 New session for user", user.id, ":", sid);
         } else {
-            console.log("♻️ Restored session:", sid);
+            console.log("♻️ Restored session for user", user.id, ":", sid);
             await loadChatHistory(sid);
         }
 
@@ -273,7 +292,8 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                 "Bạn có chắc chắn muốn xóa lịch sử hiện tại và bắt đầu cuộc hội thoại mới không?"
             )
         ) {
-            localStorage.removeItem("chatbot_session_id");
+            const storageKey = getSessionStorageKey();
+            localStorage.removeItem(storageKey);
             setMessages([]);
             setShowWelcome(true);
             initializeSession();

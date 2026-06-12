@@ -32,6 +32,7 @@ const CartPage = () => {
   const initialStep = searchParams.get("step") === "2" ? "address" : "cart";
   const [step, setStep] = useState<"cart" | "address" | "payment">(initialStep);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [shippingMethodId, setShippingMethodId] = useState<number>(1);
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<VoucherValidationResponse | null>(null);
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
@@ -42,10 +43,11 @@ const CartPage = () => {
   const selectedItems = cart.filter(item => selectedItemIds.includes(item.id));
   const selectedSubtotal = selectedItems.reduce((sum, item) => sum + item.totalPrice, 0);
   
-  // Calculate shipping fee dynamically
-  const shippingFee = (selectedSubtotal > 0 && selectedSubtotal < settings.shipping.threshold) 
-    ? settings.shipping.fee 
-    : 0;
+  // Calculate shipping fee dynamically based on selected shipping method
+  const baseShippingFee = shippingMethodId === 1 ? 30000 : 50000;
+  
+  // No automatic free shipping threshold to match Backend logic. Free ship only via vouchers.
+  const shippingFee = selectedSubtotal > 0 ? baseShippingFee : 0;
 
   const discount = appliedVoucher ? appliedVoucher.discountAmount : 0;
   const finalTotal = Math.max(0, selectedSubtotal + shippingFee - discount);
@@ -262,6 +264,8 @@ const CartPage = () => {
               addressId={selectedAddressId}
               voucherCode={appliedVoucher?.voucher?.code}
               selectedItemIds={selectedItemIds}
+              shippingMethodId={shippingMethodId}
+              onShippingMethodChange={setShippingMethodId}
             />
           )}
         </div>

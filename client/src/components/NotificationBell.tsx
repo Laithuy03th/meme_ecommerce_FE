@@ -5,7 +5,7 @@ import { Bell, CheckCircle2, Package, Clock, XCircle, Info } from "lucide-react"
 import { notificationApi } from "@/services/api/notificationApi";
 import { NotificationType } from "@/types/notification";
 import { useAuthStore } from "@/stores/authStore";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 // Custom time formatting function to replace date-fns
 const timeAgo = (dateString: string) => {
@@ -38,15 +38,30 @@ const NotificationBell = () => {
   const { isAuthenticated } = useAuthStore();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchUnreadCount();
+
+      // Refetch when window regains focus
+      const onFocus = () => fetchUnreadCount();
+      window.addEventListener("focus", onFocus);
+
+      // Poll every 30 seconds
+      const interval = setInterval(() => {
+        fetchUnreadCount();
+      }, 30000);
+
+      return () => {
+        window.removeEventListener("focus", onFocus);
+        clearInterval(interval);
+      };
     } else {
       setUnreadCount(0);
       setNotifications([]);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

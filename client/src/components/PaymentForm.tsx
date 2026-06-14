@@ -45,7 +45,7 @@ const PaymentForm = ({ addressId, voucherCode, selectedItemIds, shippingMethodId
       // 1. Create Order
       const order = await checkout({
         addressId,
-        shippingMethodId: 1, // Defaulting to Standard (1) as per docs
+        shippingMethodId, // Use actual selection from props (1=Standard, 2=Express)
         paymentMethod,
         voucherCode,
         note: "",

@@ -16,6 +16,8 @@ import { useTheme } from "next-themes";
 import { SidebarTrigger, useSidebar } from "./ui/sidebar";
 import { logoutAction } from "@/actions/authActions";
 
+import NotificationBell from "./NotificationBell";
+
 const Navbar = ({ user }: { user: any }) => {
   const { theme, setTheme } = useTheme();
   const { toggleSidebar } = useSidebar();
@@ -40,6 +42,10 @@ const Navbar = ({ user }: { user: any }) => {
       {/* RIGHT */}
       <div className="flex items-center gap-4">
         <Link href="/">Dashboard</Link>
+        
+        {/* NOTIFICATION BELL */}
+        <NotificationBell />
+
         {/* THEME MENU */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

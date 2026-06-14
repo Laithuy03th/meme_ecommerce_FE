@@ -179,7 +179,11 @@ export const authenticatedFetch = async <T = any>(
         throw new ApiError(errorMessage, res.status);
     }
 
-    return res.json();
+    const text = await res.text();
+    if (!text) {
+        return null as unknown as T;
+    }
+    return JSON.parse(text);
 };
 
 // ================================================================

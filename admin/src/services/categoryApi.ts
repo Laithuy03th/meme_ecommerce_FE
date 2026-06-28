@@ -7,7 +7,7 @@ export const categoryApi = {
      * List all categories
      */
     async list(): Promise<Category[]> {
-        return authenticatedFetch<Category[]>('/categories');
+        return authenticatedFetch<Category[]>('/admin/categories');
     },
 
     /**
@@ -15,7 +15,7 @@ export const categoryApi = {
      * Get category by ID
      */
     async getById(id: number): Promise<Category> {
-        return authenticatedFetch<Category>(`/categories/${id}`);
+        return authenticatedFetch<Category>(`/admin/categories/${id}`);
     },
 
     /**
@@ -23,7 +23,7 @@ export const categoryApi = {
      * Create new category
      */
     async create(data: CreateCategoryRequest): Promise<Category> {
-        return authenticatedFetch<Category>('/categories', {
+        return authenticatedFetch<Category>('/admin/categories', {
             method: 'POST',
             body: JSON.stringify(data),
         });
@@ -34,7 +34,7 @@ export const categoryApi = {
      * Update category
      */
     async update(id: number, data: CreateCategoryRequest): Promise<Category> {
-        return authenticatedFetch<Category>(`/categories/${id}`, {
+        return authenticatedFetch<Category>(`/admin/categories/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         });
@@ -45,7 +45,7 @@ export const categoryApi = {
      * Delete category
      */
     async delete(id: number): Promise<void> {
-        return authenticatedFetch<void>(`/categories/${id}`, {
+        return authenticatedFetch<void>(`/admin/categories/${id}`, {
             method: 'DELETE',
         });
     },

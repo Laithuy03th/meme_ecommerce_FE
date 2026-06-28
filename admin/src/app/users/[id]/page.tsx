@@ -24,7 +24,7 @@ import EditUser from "@/components/EditUser";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AppLineChart from "@/components/AppLineChart";
 import { userApi } from "@/services/userApi";
-import type { UserType } from "@/services/authApi";
+import type { User } from "@/services/userApi";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -32,7 +32,7 @@ interface PageProps {
 
 const SingleUserPage = ({ params }: PageProps) => {
   const unwrappedParams = use(params);
-  const [user, setUser] = useState<UserType | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

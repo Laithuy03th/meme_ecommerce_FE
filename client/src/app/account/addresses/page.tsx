@@ -16,7 +16,7 @@ const AddressesPage = () => {
     const fetchAddresses = async () => {
         try {
             const data = await getAddresses();
-            // Sort: Default first, then new to old
+
             const sorted = data.sort((a, b) => {
                 if (a.default && !b.default) return -1;
                 if (!a.default && b.default) return 1;

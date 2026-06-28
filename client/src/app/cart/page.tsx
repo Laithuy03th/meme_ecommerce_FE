@@ -38,15 +38,13 @@ const CartPage = () => {
   const [isValidatingVoucher, setIsValidatingVoucher] = useState(false);
   const router = useRouter();
 
-  // Calculate totals based on selection
+
   const [settings, setSettings] = useState(getSettings());
   const selectedItems = cart.filter(item => selectedItemIds.includes(item.id));
   const selectedSubtotal = selectedItems.reduce((sum, item) => sum + item.totalPrice, 0);
   
-  // Calculate shipping fee dynamically based on selected shipping method
   const baseShippingFee = shippingMethodId === 1 ? 30000 : 50000;
   
-  // No automatic free shipping threshold to match Backend logic. Free ship only via vouchers.
   const shippingFee = selectedSubtotal > 0 ? baseShippingFee : 0;
 
   const discount = appliedVoucher ? appliedVoucher.discountAmount : 0;

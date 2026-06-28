@@ -10,7 +10,7 @@ import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 
-// Helper to format currency
+
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
         style: "currency",
@@ -23,20 +23,19 @@ const ProfilePage = () => {
     const [user, setUser] = useState<UserType | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Global Auth Store
+
     const { accessToken, updateTokens } = useAuthStore();
 
-    // Use standard UserType form
+
     const { register, handleSubmit, reset } = useForm<Partial<UserType>>();
 
-    // ... (fetchProfile logic same as before) ...
+    
     const fetchProfile = async () => {
         try {
             const res = await authenticatedFetch("/users/me");
             if (res.ok) {
                 const data = await res.json();
 
-                // Normalize backend field: avatar -> avatarUrl
                 if (data.avatar && !data.avatarUrl) {
                     data.avatarUrl = data.avatar;
                 }
@@ -94,39 +93,36 @@ const ProfilePage = () => {
             const url = await uploadFile(file);
             console.log("Uploaded Avatar URL:", url);
 
-            // Optimistic update local
+           
             if (user) {
                 setUser({ ...user, avatarUrl: url });
             }
 
-            // Backend Requirement: Send 'avatar' key with URL, along with other profile info
+            
             const updatePayload: any = {
                 fullName: user?.fullName,
                 phone: user?.phone,
-                // gender: user?.gender, // Optional based on what user has
-                // dateOfBirth: user?.dateOfBirth,
-                avatar: url // Key must be 'avatar' per backend instruction
+                avatar: url
             };
 
-            // Note: If backend requires ALL fields for PUT, map them all. 
-            // If PATCH, only changed fields. Assuming PUT as per instruction example.
+           
             if (user?.gender) updatePayload.gender = user.gender;
             if (user?.dateOfBirth) updatePayload.dateOfBirth = user.dateOfBirth;
 
-            // Update & Get new User Object from Backend
+           
             const updatedUser = await updateProfile(updatePayload);
 
-            // Normalize backend field: avatar -> avatarUrl
+          
             if ((updatedUser as any).avatar && !updatedUser.avatarUrl) {
                 updatedUser.avatarUrl = (updatedUser as any).avatar;
             }
 
-            // SYNC GLOBAL STATE (Sidebar & Navbar will update)
+           
             if (accessToken) {
                 updateTokens(updatedUser, accessToken);
             }
 
-            // Sync Local State
+           
             setUser(updatedUser);
 
             toast.update(toastId, { render: "Avatar updated successfully!", type: "success", isLoading: false, autoClose: 3000 });
@@ -220,8 +216,7 @@ const ProfilePage = () => {
                             <h3 className="text-lg font-bold text-gray-900">Personal Information</h3>
                         </div>
                         <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm space-y-4">
-                            {/* ... (Existing form fields kept same) ... */}
-                            {/* I will reuse existing form fields logic via write_to_file if easier, but let's try keep replace compact */}
+                          
                             <div className="grid grid-cols-1 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>

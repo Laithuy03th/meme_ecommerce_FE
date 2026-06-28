@@ -25,14 +25,14 @@ const OrderDetailPage = () => {
     const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
     const [isReordering, setIsReordering] = useState(false);
     const [reviewModalItems, setReviewModalItems] = useState<OrderItemType[]>([]);
-    // Track reviewed item IDs locally — survives server re-fetch race condition
+   
     const [localReviewedIds, setLocalReviewedIds] = useState<Set<number>>(new Set());
 
     const fetchOrder = async () => {
         try {
             const data = await getOrder(parseInt(id));
-            console.log("Order Data:", data); // Debug log
-            console.log("Order Items:", data.items); // Debug items
+            console.log("Order Data:", data);
+            console.log("Order Items:", data.items);
             setOrder(data);
         } catch (error) {
             console.error("Failed to fetch order", error);
@@ -74,7 +74,6 @@ const OrderDetailPage = () => {
 
     const { addToCart, setSelectedItems, cart } = useCartStore();
 
-    // Open Modal instead of direct add
     const handleReOrderClick = () => {
         setIsReorderModalOpen(true);
     };
@@ -84,11 +83,9 @@ const OrderDetailPage = () => {
         try {
             const newSelectedIds: number[] = [];
 
-            // 1. Add items to cart sequentially to avoid race conditions
             for (const { item, quantity } of selectedItems) {
                 if (item.productId) {
                     const mockProduct = { id: item.productId } as any;
-                    // Add to cart and GET THE UPDATED ITEMS
                     const updatedItems = await addToCart(
                         mockProduct,
                         quantity,
@@ -97,11 +94,8 @@ const OrderDetailPage = () => {
                         item.size
                     );
 
-                    // 2. Find the Cart Item ID using the FRESHLY RETURNED data
-                    // This eliminates any store synchronization issues
                     const sourceItems = updatedItems || useCartStore.getState().cart;
 
-                    // Robust matching logic:
                     const cartItem = sourceItems.find(c =>
                         Number(c.productId) === Number(item.productId) &&
                         Number(c.variantId || 0) === Number(item.variantId || 0)
@@ -110,7 +104,6 @@ const OrderDetailPage = () => {
                     if (cartItem) {
                         newSelectedIds.push(cartItem.id);
                     } else {
-                        // Fallback: Try matching just by productId 
                         const itemsWithSameProduct = sourceItems.filter(c => Number(c.productId) === Number(item.productId));
                         if (itemsWithSameProduct.length === 1) {
                             newSelectedIds.push(itemsWithSameProduct[0].id);
@@ -119,19 +112,16 @@ const OrderDetailPage = () => {
                 }
             }
 
-            // 3. Set selection ONLY to these items
             if (newSelectedIds.length > 0) {
                 setSelectedItems(newSelectedIds);
-                // 4. Force navigation to checkout address step
                 router.push("/cart?step=2");
             } else {
                 toast.error("Could not select items for checkout");
-                router.push("/cart"); // Fallback
+                router.push("/cart"); 
             }
 
         } catch (error) {
             console.error("Re-order failed", error);
-            // Toast handled by addToCart
         } finally {
             setIsReordering(false);
             setIsReorderModalOpen(false);
@@ -146,9 +136,6 @@ const OrderDetailPage = () => {
         return <div className="p-8 text-center">Order not found</div>;
     }
 
-    // Timeline logic (simplified based on status)
-    // Timeline logic (simplified based on status)
-    // Timeline Steps
     const steps = [
         { label: 'Đặt hàng', icon: Clock },
         { label: 'Xác nhận', icon: Package },
@@ -210,7 +197,6 @@ const OrderDetailPage = () => {
                             const isCurrent = index === currentStepIndex;
                             const Icon = step.icon;
 
-                            // Special color logic for Cancelled/Returned
                             let stepColorClass = isCompleted ? "bg-primary border-primary text-white" : "bg-white border-gray-300 text-gray-300";
                             if (isCancelled || isReturned) stepColorClass = "bg-red-100 border-red-500 text-red-500";
 
@@ -229,7 +215,7 @@ const OrderDetailPage = () => {
                 </div>
             )}
 
-            {/* STATUS BANNERS - SHOPEE STYLE */}
+            {/* STATUS BANNERS */}
 
             {order.status === ORDER_STATUS.DELIVERED && (() => {
                 const RETURN_WINDOW_DAYS = 7;
@@ -497,11 +483,9 @@ const OrderDetailPage = () => {
                 onClose={() => setIsReviewOpen(false)}
                 items={reviewModalItems}
                 onReviewSuccess={(reviewedItemId: number) => {
-                    // Track locally — immune to server re-fetch overwriting state
                     setLocalReviewedIds(prev => new Set(prev).add(reviewedItemId));
                     setIsReviewOpen(false);
                     toast.success("Đánh giá thành công! Cảm ơn bạn 🎉");
-                    // Sync with server in background
                     fetchOrder();
                 }}
             />

@@ -5,7 +5,7 @@ import Link from "next/link";
 const CategoriesPage = async () => {
     const categories = await getCategories();
 
-    // Fallback image if category doesn't have one
+
     const getCategoryImage = (cat: any) => {
         return cat.imageUrl || "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=500";
     };

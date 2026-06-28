@@ -23,8 +23,10 @@ const ReorderModal = ({ isOpen, onClose, items, onConfirm, isLoading }: ReorderM
     // Initialize state when modal opens
     useEffect(() => {
         if (isOpen && items) {
-            const allIndices = new Set(items.map((_, i) => i));
-            setSelectedIndices(allIndices);
+            const selectableIndices = new Set(
+                items.map((_, i) => i).filter(i => (items[i].currentStock === undefined || items[i].currentStock! > 0))
+            );
+            setSelectedIndices(selectableIndices);
 
             const initialQuantities: Record<number, number> = {};
             items.forEach((item, i) => {
@@ -37,6 +39,7 @@ const ReorderModal = ({ isOpen, onClose, items, onConfirm, isLoading }: ReorderM
     if (!isOpen) return null;
 
     const toggleSelection = (index: number) => {
+        if (items[index].currentStock !== undefined && items[index].currentStock! <= 0) return; // Prevent selection if out of stock
         const newSelected = new Set(selectedIndices);
         if (newSelected.has(index)) {
             newSelected.delete(index);
@@ -93,20 +96,23 @@ const ReorderModal = ({ isOpen, onClose, items, onConfirm, isLoading }: ReorderM
                 {/* Body - List of items */}
                 <div className="p-0 overflow-y-auto flex-1 custom-scrollbar">
                     {items.map((item, index) => {
-                        const isSelected = selectedIndices.has(index);
+                        const isOutOfStock = item.currentStock !== undefined && item.currentStock <= 0;
+                        const isSelected = !isOutOfStock && selectedIndices.has(index);
                         const qty = quantities[index] || item.quantity;
+                        const maxQty = item.currentStock !== undefined ? item.currentStock : 99;
 
                         return (
                             <div
                                 key={index}
-                                className={`flex items-center gap-4 p-4 border-b border-gray-100 transition-colors ${isSelected ? 'bg-blue-50/30' : 'bg-gray-50/50 opacity-60'}`}
+                                className={`flex items-center gap-4 p-4 border-b border-gray-100 transition-colors ${isSelected ? 'bg-blue-50/30' : (isOutOfStock ? 'bg-gray-100/50 opacity-50 grayscale' : 'bg-gray-50/50 opacity-60')}`}
                             >
                                 {/* Checkbox */}
                                 <button
                                     onClick={() => toggleSelection(index)}
-                                    className={`flex-shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-primary border-primary text-white' : 'bg-white border-gray-300 hover:border-primary'}`}
+                                    disabled={isOutOfStock}
+                                    className={`flex-shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${isOutOfStock ? 'bg-gray-200 border-gray-300 cursor-not-allowed' : isSelected ? 'bg-primary border-primary text-white' : 'bg-white border-gray-300 hover:border-primary'}`}
                                 >
-                                    {isSelected && <CheckSquare className="w-4 h-4" />}
+                                    {isSelected && !isOutOfStock && <CheckSquare className="w-4 h-4" />}
                                 </button>
 
                                 {/* Image */}
@@ -128,6 +134,11 @@ const ReorderModal = ({ isOpen, onClose, items, onConfirm, isLoading }: ReorderM
                                                 {item.variantInfo || `${item.color || ''} ${item.size || ''}`}
                                             </span>
                                         )}
+                                        {isOutOfStock && (
+                                            <span className="text-red-500 font-bold ml-2 border border-red-200 bg-red-50 px-2 rounded">
+                                                Hết hàng
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="mt-1 font-bold text-primary">
                                         {(item.price || item.unitPrice || 0).toLocaleString('vi-VN')}đ
@@ -135,18 +146,19 @@ const ReorderModal = ({ isOpen, onClose, items, onConfirm, isLoading }: ReorderM
                                 </div>
 
                                 {/* Quantity Control */}
-                                <div className={`flex items-center bg-white border border-gray-200 rounded-lg h-9 shadow-sm ${!isSelected && 'pointer-events-none opacity-50'}`}>
+                                <div className={`flex items-center bg-white border border-gray-200 rounded-lg h-9 shadow-sm ${(!isSelected || isOutOfStock) && 'pointer-events-none opacity-50'}`}>
                                     <button
                                         onClick={() => updateQuantity(index, -1)}
                                         className="w-8 h-full flex items-center justify-center hover:bg-gray-50 text-gray-600 rounded-l-lg disabled:opacity-30"
-                                        disabled={qty <= 1}
+                                        disabled={qty <= 1 || isOutOfStock}
                                     >
                                         <Minus className="w-3 h-3" />
                                     </button>
-                                    <div className="w-10 text-center text-sm font-bold text-gray-900">{qty}</div>
+                                    <div className="w-10 text-center text-sm font-bold text-gray-900">{isOutOfStock ? 0 : qty}</div>
                                     <button
                                         onClick={() => updateQuantity(index, 1)}
-                                        className="w-8 h-full flex items-center justify-center hover:bg-gray-50 text-gray-600 rounded-r-lg"
+                                        className="w-8 h-full flex items-center justify-center hover:bg-gray-50 text-gray-600 rounded-r-lg disabled:opacity-30"
+                                        disabled={isOutOfStock || qty >= maxQty}
                                     >
                                         <Plus className="w-3 h-3" />
                                     </button>

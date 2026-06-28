@@ -478,40 +478,39 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                                         msg.data?.products &&
                                         msg.data.products.length > 0 && (
                                             <div className="mt-4">
-                                                <div className="flex gap-3 overflow-x-auto pb-3 snap-x">
-                                                    {msg.data.products.slice(0, 5).map((product) => (
+                                                {/* Carousel: chỉ hiện sản phẩm chatbot đề xuất trong text */}
+                                                <div className="flex gap-2.5 overflow-x-auto pb-3 snap-x snap-mandatory">
+                                                    {msg.data.products.map((product) => (
                                                         <a
                                                             key={product.id ?? product.slug ?? product.name}
                                                             href={`/products/${product.id}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="min-w-[160px] bg-white border border-gray-200 rounded-lg p-2 hover:shadow-md transition-shadow flex-shrink-0"
+                                                            className="min-w-[148px] max-w-[148px] bg-white border border-gray-200 rounded-xl p-2 hover:shadow-md hover:border-blue-300 transition-all flex-shrink-0 snap-start group"
                                                         >
-                                                            <img
-                                                                src={product.imageUrl || "/placeholder-product.png"}
-                                                                alt={product.name}
-                                                                className="w-full h-24 object-cover rounded mb-2"
-                                                            />
-
-                                                            <h4 className="text-xs font-medium text-gray-800 line-clamp-2 mb-1">
+                                                            <div className="w-full h-[108px] rounded-lg overflow-hidden bg-gray-100 mb-2">
+                                                                <img
+                                                                    src={product.imageUrl || "/placeholder-product.png"}
+                                                                    alt={product.name}
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                                />
+                                                            </div>
+                                                            <h4 className="text-xs font-semibold text-gray-800 line-clamp-2 mb-1 leading-tight">
                                                                 {product.name}
                                                             </h4>
-
                                                             {product.brand && (
-                                                                <p className="text-[11px] text-gray-500 mb-1">
+                                                                <p className="text-[10px] text-gray-400 mb-1 truncate">
                                                                     {product.brand}
                                                                 </p>
                                                             )}
-
-                                                            <p className="text-sm font-bold text-blue-600">
+                                                            <p className="text-xs font-bold text-blue-600">
                                                                 {new Intl.NumberFormat("vi-VN", {
                                                                     style: "currency",
                                                                     currency: "VND",
                                                                 }).format(product.price)}
                                                             </p>
-
                                                             {typeof product.rating === "number" && (
-                                                                <p className="text-[11px] text-amber-600 mt-1">
+                                                                <p className="text-[10px] text-amber-500 mt-0.5 font-medium">
                                                                     ★ {product.rating.toFixed(1)}
                                                                 </p>
                                                             )}
@@ -524,11 +523,12 @@ export default function Chatbot({ isOpen, onToggle }: ChatbotProps) {
                                                         onClick={() => router.push(buildProductsUrl(msg.data?.searchMeta))}
                                                         className="mt-2 w-full bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-black transition-colors"
                                                     >
-                                                        Xem tất cả kết quả
+                                                        Xem tất cả kết quả{msg.data.totalFound && msg.data.totalFound > (msg.data.products?.length ?? 0) ? ` (${msg.data.totalFound}+)` : ""}
                                                     </button>
                                                 )}
                                             </div>
                                         )}
+
 
                                     {msg.intent === "order" && msg.data?.order && (
                                         <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm shadow-sm relative overflow-hidden">

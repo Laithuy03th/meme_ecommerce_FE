@@ -13,7 +13,6 @@ export const getCart = async (): Promise<CartType> => {
         }
         return res.json();
     } catch (error) {
-        console.error("Get Cart Error:", error);
         throw error;
     }
 };
@@ -35,14 +34,12 @@ export const addToCart = async (data: { productId: number; variantId?: number | 
 
         if (!res.ok) {
             const errorData = await res.json().catch(() => ({}));
-            console.error("Add to cart failed response:", res.status, errorData);
 
             if (res.status === 401) throw new ApiError("Session expired", 401);
             throw new ApiError(errorData.message || "Failed to add to cart", res.status);
         }
         return res.json();
     } catch (error) {
-        console.error("Add to Cart Network Error:", error);
         throw error;
     }
 };
@@ -61,7 +58,6 @@ export const updateCartItem = async (itemId: number, quantity: number): Promise<
         }
         return res.json();
     } catch (error) {
-        console.error("Update Cart Item Error:", error);
         throw error;
     }
 };
@@ -79,7 +75,6 @@ export const removeCartItem = async (itemId: number): Promise<CartType> => {
         }
         return res.json();
     } catch (error) {
-        console.error("Remove Cart Item Error:", error);
         throw error;
     }
 };

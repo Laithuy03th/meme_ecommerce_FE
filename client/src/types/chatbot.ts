@@ -33,6 +33,23 @@ export type ChatOrderData = {
     createdAt: string;
 };
 
+/** Kiểu data chung cho cả ChatbotMessageResponse và ChatMessage */
+export type ChatMessageData = {
+    products?: ChatProductCard[];
+    searchMeta?: ChatSearchMeta;
+    order?: ChatOrderData;
+    orders?: Array<{
+        id: number;
+        status: string;
+        totalAmount: number;
+        createdAt: string;
+    }>;
+    /** Cách render sản phẩm: "carousel" (nhiều card) | "featured" (1 ảnh đại diện) */
+    displayMode?: "carousel" | "featured";
+    /** Tổng số SP tìm được thực tế từ DB (backend có thể chỉ gửi 1 về nhưng có nhiều hơn) */
+    totalFound?: number;
+};
+
 export type ChatbotMessageRequest = {
     message: string;
     sessionId: string;
@@ -44,17 +61,7 @@ export type ChatbotMessageResponse = {
     intent: "product" | "policy" | "order" | "greeting" | "other";
     sessionId: string;
     quickReplies?: QuickReply[];
-    data?: {
-        products?: ChatProductCard[];
-        searchMeta?: ChatSearchMeta;
-        order?: ChatOrderData;
-        orders?: Array<{
-            id: number;
-            status: string;
-            totalAmount: number;
-            createdAt: string;
-        }>;
-    };
+    data?: ChatMessageData;
     requiresAuth?: boolean;
 };
 
@@ -83,15 +90,5 @@ export type ChatMessage = {
     sessionId?: string;
     intent?: "product" | "policy" | "order" | "greeting" | "other";
     quickReplies?: QuickReply[];
-    data?: {
-        products?: ChatProductCard[];
-        searchMeta?: ChatSearchMeta;
-        order?: ChatOrderData;
-        orders?: Array<{
-            id: number;
-            status: string;
-            totalAmount: number;
-            createdAt: string;
-        }>;
-    };
-};
+    data?: ChatMessageData;
+};

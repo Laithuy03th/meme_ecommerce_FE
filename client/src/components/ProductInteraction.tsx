@@ -314,7 +314,7 @@ const ProductInteraction = ({
 
       {/* QUANTITY & ACTIONS */}
       <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-100">
-        <div className="flex items-center border border-gray-200 rounded-lg w-fit">
+        <div className={`flex items-center border border-gray-200 rounded-lg w-fit ${product.stockStatus === "OUT_OF_STOCK" || product.stockQuantity === 0 ? "opacity-50 pointer-events-none" : ""}`}>
           <button
             className="p-3 hover:bg-gray-50 text-gray-500 transition-colors"
             onClick={() => handleQuantityChange("decrement")}
@@ -333,14 +333,24 @@ const ProductInteraction = ({
         <div className="flex-1 flex gap-3">
           <button
             onClick={handleAddToCart}
-            className="flex-1 bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:bg-gray-800 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+            disabled={product.stockStatus === "OUT_OF_STOCK" || product.stockQuantity === 0}
+            className={`flex-1 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition-all flex items-center justify-center gap-2 ${
+              product.stockStatus === "OUT_OF_STOCK" || product.stockQuantity === 0 
+                ? "bg-gray-400 cursor-not-allowed shadow-none" 
+                : "bg-gray-900 hover:bg-gray-800 hover:shadow-xl"
+            }`}
           >
             <ShoppingCart className="w-5 h-5" />
-            Add to Cart
+            {product.stockStatus === "OUT_OF_STOCK" || product.stockQuantity === 0 ? "Hết hàng" : "Add to Cart"}
           </button>
           <button
             onClick={handleBuyNow}
-            className="flex-1 bg-primary text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:bg-primary-dark hover:shadow-xl transition-all"
+            disabled={product.stockStatus === "OUT_OF_STOCK" || product.stockQuantity === 0}
+            className={`flex-1 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition-all ${
+              product.stockStatus === "OUT_OF_STOCK" || product.stockQuantity === 0 
+                ? "bg-gray-400 cursor-not-allowed shadow-none" 
+                : "bg-primary hover:bg-primary-dark hover:shadow-xl"
+            }`}
           >
             Buy Now
           </button>

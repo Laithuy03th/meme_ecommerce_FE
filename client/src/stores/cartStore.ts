@@ -60,7 +60,6 @@ const useCartStore = create<CartStoreStateType & CartStoreActionsType>()(
           toast.success("Added to cart!");
           return cartData.items; // RETURN THE UPDATED ITEMS
         } catch (error: any) {
-          console.error("Failed to add to cart:", error);
           const message = error.message === "Failed to fetch"
             ? "Network error. Please check if backend is running."
             : (error.message || "Failed to add to cart");

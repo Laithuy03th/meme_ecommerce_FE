@@ -262,6 +262,7 @@ export type OrderItemType = {
   price?: number;            // New API
   quantity: number;
   totalPrice?: number;
+  currentStock?: number; // New field for stock checking
   hasReviewed?: boolean; // New field for per-item review tracking
 };
 

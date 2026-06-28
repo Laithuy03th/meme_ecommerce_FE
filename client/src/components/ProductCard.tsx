@@ -132,10 +132,15 @@ const ProductCard = ({ product }: { product: ProductType }) => {
           <div className="absolute inset-x-4 bottom-4 z-20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]">
             <button
               onClick={handleAddToCart}
-              className="w-full bg-white/90 backdrop-blur-md text-slate-900 py-3 rounded-xl font-bold hover:bg-primary hover:text-white transition-all duration-300 shadow-lg flex items-center justify-center gap-2"
+              disabled={product.stockStatus === "OUT_OF_STOCK" || product.stockQuantity === 0}
+              className={`w-full backdrop-blur-md py-3 rounded-xl font-bold transition-all duration-300 shadow-lg flex items-center justify-center gap-2 ${
+                product.stockStatus === "OUT_OF_STOCK" || product.stockQuantity === 0
+                  ? "bg-gray-300/90 text-gray-500 cursor-not-allowed shadow-none"
+                  : "bg-white/90 text-slate-900 hover:bg-primary hover:text-white"
+              }`}
             >
               <ShoppingBag className="w-5 h-5" />
-              Add to Cart
+              {product.stockStatus === "OUT_OF_STOCK" || product.stockQuantity === 0 ? "Hết hàng" : "Add to Cart"}
             </button>
           </div>
         </div>

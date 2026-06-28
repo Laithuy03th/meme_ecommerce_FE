@@ -31,8 +31,7 @@ export default function LoginPage() {
         try {
             const data = await login({ email, password });
 
-            // Backend automatically sets refreshToken cookie with path=/admin
-            // We only need to store accessToken in localStorage
+     
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("user", JSON.stringify(data.user));
 
@@ -55,9 +54,9 @@ export default function LoginPage() {
 
     return (
         <div className="w-full h-screen grid lg:grid-cols-2 overflow-hidden bg-white">
-            {/* LEFT SIDE: Visuals & Branding (Mint Pastel Theme) */}
+           
             <div className="hidden lg:flex flex-col justify-between relative bg-gradient-to-br from-teal-50 via-emerald-50 to-cyan-50 p-10 lg:p-12 overflow-hidden">
-                {/* Decorative Blobs (Hiệu ứng nền loang màu) */}
+           
                 <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[600px] h-[600px] bg-teal-200/30 rounded-full blur-[80px] mix-blend-multiply" />
                 <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-[500px] h-[500px] bg-emerald-200/30 rounded-full blur-[80px] mix-blend-multiply" />
 
@@ -86,7 +85,6 @@ export default function LoginPage() {
                         </p>
                     </div>
 
-                    {/* Decorative Elements (Glass card) */}
                     <div className="mt-8 p-4 bg-white/40 backdrop-blur-md rounded-2xl border border-white/50 shadow-sm w-3/4">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -105,11 +103,11 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {/* RIGHT SIDE: Login Form (Clean White) */}
+           
             <div className="flex items-center justify-center bg-white p-8 lg:p-12">
                 <div className="w-full max-w-[400px] space-y-8">
 
-                    {/* Header Mobile */}
+
                     <div className="lg:hidden flex flex-col items-center mb-6 space-y-2">
                         <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-teal-600 text-white shadow-lg shadow-teal-600/20">
                             <Command className="h-6 w-6" />

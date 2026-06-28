@@ -267,7 +267,7 @@ export default function ProductsPage() {
               }}
               onPageSizeChange={(newSize) => {
                 setPageSize(newSize);
-                setPage(0); // Reset to first page when changing page size
+                setPage(0);
               }}
             />
           )}

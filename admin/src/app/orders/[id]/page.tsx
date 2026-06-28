@@ -42,7 +42,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         let confirmMessage = `Xác nhận chuyển trạng thái đến "${newStatus}"?`;
 
-        // Custom confirmation messages based on Backend logic
         if (newStatus === 'CANCELED') {
             confirmMessage = "Hủy đơn hàng? Hành động này sẽ cộng lại số lượng sản phẩm vào kho. Bạn có chắc chắn không?";
         } else if (newStatus === 'RETURNED') {
@@ -213,7 +212,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 { status: 'DELIVERED', label: 'Hoàn thành', icon: '🎉' }
                             ].map((step, index, arr) => {
                                 const isCompleted = ['CONFIRMED', 'PACKED', 'SHIPPED', 'DELIVERED', 'RETURN_REQUESTED', 'RETURNED', 'REFUNDED'].includes(order.status) || (order.status === 'PENDING' && index === 0);
-                                // Handle Canceled/Returned logic for visual
+
                                 const isFailed = order.status === 'CANCELED' || (order.status === 'RETURNED' && step.status !== 'PENDING');
 
                                 return (

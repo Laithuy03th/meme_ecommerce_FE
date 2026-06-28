@@ -152,7 +152,6 @@ export const authenticatedFetch = async <T = any>(
                     headers: buildHeaders(newToken),
                 });
 
-                // FIX #5: Nếu retry vẫn 401 thì không loop nữa
                 if (res.status === 401) {
                     throw new ApiError("Unauthorized after token refresh", 401);
                 }

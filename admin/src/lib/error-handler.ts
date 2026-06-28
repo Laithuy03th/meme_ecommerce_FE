@@ -5,7 +5,6 @@ export function handleApiError(error: unknown) {
     console.error('API Error:', error);
 
     if (error instanceof ApiError) {
-        // Suppress 401 errors as they are handled by api-client redirect
         if (error.status === 401) {
             return;
         }
@@ -34,7 +33,6 @@ export function handleApiError(error: unknown) {
     }
 }
 
-// Helper for building query params
 export function buildQueryString(params: Record<string, any>): string {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {

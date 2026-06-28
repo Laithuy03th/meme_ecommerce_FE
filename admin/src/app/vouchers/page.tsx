@@ -99,8 +99,6 @@ export default function VouchersPage() {
 
             await voucherApi.toggle(id);
             toast.success("Cập nhật trạng thái thành công");
-            // No need to reload if optimistic update was correct, but safely reload to sync
-            loadVouchers();
         } catch (error) {
             handleApiError(error);
             loadVouchers(); // Revert on error

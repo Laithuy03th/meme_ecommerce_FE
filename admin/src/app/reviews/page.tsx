@@ -58,7 +58,7 @@ export default function ReviewsPage() {
             toast.success("Đã trả lời đánh giá thành công");
             setReplyingReview(null);
             setReplyText("");
-            loadReviews(); // Refresh list to show reply
+            loadReviews(); 
         } catch (error) {
             handleApiError(error);
         } finally {

@@ -51,7 +51,7 @@ export function DataTable<TData, TValue>({
       sorting,
       rowSelection,
     },
-    getRowId: (row: any) => row.id.toString(), // Ensure we can get ID from selection
+    getRowId: (row: any) => row.id.toString(), 
   });
 
   const handleDeleteUsers = async () => {
@@ -61,11 +61,11 @@ export function DataTable<TData, TValue>({
     const selectedIds = Object.keys(rowSelection).map(id => parseInt(id));
 
     try {
-      // Delete sequentially or parallel
+
       for (const id of selectedIds) {
         await deleteUserAction(id);
       }
-      setRowSelection({}); // Clear selection
+      setRowSelection({}); 
       alert("Selected users deleted successfully");
     } catch (error: any) {
       alert("Failed to delete some users");

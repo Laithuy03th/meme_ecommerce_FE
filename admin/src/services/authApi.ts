@@ -116,12 +116,7 @@ export const refreshAccessToken = async (): Promise<LoginResponse> => {
 };
 
 
-// ================================================================
-// LOGOUT — POST /api/v1/auth/logout
-// BE tự lấy Refresh Token từ Cookie để xóa, FE chỉ gửi Access Token
-// credentials:'include' bắt buộc để cookie được gửi lên và bị xóa
-// FIX #8: Thêm Content-Type, bỏ body rỗng
-// ================================================================
+
 export const logout = async (accessToken?: string): Promise<void> => {
     try {
         const headers: Record<string, string> = {
@@ -142,10 +137,7 @@ export const logout = async (accessToken?: string): Promise<void> => {
 };
 
 
-// ================================================================
-// GET ME — GET /api/v1/users/me
-// FIX #7: Bỏ param token?, authenticatedFetch tự xử lý token
-// ================================================================
+
 export const getMe = async (): Promise<UserType> => {
     return authenticatedFetch("/users/me");
 };

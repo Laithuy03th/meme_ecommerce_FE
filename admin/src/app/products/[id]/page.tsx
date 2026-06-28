@@ -195,7 +195,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     </CardContent>
                 </Card>
 
-                {/* Variants Management Placeholder */}
                 <Card className="border-dashed border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-muted-foreground">
